@@ -82,7 +82,7 @@ class Config:
         """
         for device in self.config['devices']:
             if device['device'].lower() == device_name.lower():
-                return device['ammount']
+                return device['amount']
         return 0
     
     def set_sensor_amount(self, device_name, amount):
