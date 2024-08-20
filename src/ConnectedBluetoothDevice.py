@@ -1,9 +1,9 @@
 """
 @file bluetooth_sensor_data.py
-@brief Module for collecting data from BLE SEN55 and ConnectedWoodPlank sensors.
+@brief Module for collecting data from BLE SEN55 and Connected_Wood_Plank sensors.
 
 This module handles the discovery, collection, and recording of data
-from BLE SEN55 and ConnectedWoodPlank sensors.
+from BLE SEN55 and Connected_Wood_Plank sensors.
 
 @author [Your Name]
 @date [Current Date]
@@ -48,6 +48,7 @@ class ConnectedBluetoothDevice:
             self.current_time = time.strftime("%Y-%m-%d %H:%M:%S")
 
             self.DIRECTORY = self.config['directories']['csv']
+
             self.SEN55_filename = self.config['filenames']['SEN55']
 
             self.SEN55_path = os.path.join(self.DIRECTORY, self.config['filenames']['SEN55'])
@@ -125,7 +126,7 @@ class ConnectedBluetoothDevice:
                                     values = struct.unpack(self.ConfigClass.get_values_string(name_device), data[:self.ConfigClass.get_values(name_device)])
                                     logging.debug(', '.join(str(value) for value in values))
 
-                                    if name_device == "ConnectedWoodPlanck":
+                                    if name_device == "Connected_Wood_Plank":
                                         self.CWP_data_to_array(values)
                                     elif name_device == "SEN55":
                                         self.SEN55_data_to_array(values)
@@ -187,7 +188,7 @@ class ConnectedBluetoothDevice:
 
     def CWP_data_to_array(self, values):
         """
-        @brief Process and store ConnectedWoodPlank sensor data.
+        @brief Process and store Connected_Wood_Plank sensor data.
         @param values The sensor values to process.
         @exception ConnectedBluetoothDeviceError If CWP data processing fails.
         """
@@ -262,11 +263,11 @@ class ConnectedBluetoothDevice:
 
     def CWP_data_to_csv(self):
         """
-        @brief Write ConnectedWoodPlank data to CSV files.
+        @brief Write Connected_Wood_Plank data to CSV files.
         @exception ConnectedBluetoothDeviceError If CSV writing fails.
         """
         try:
-            sensor_amount = self.ConfigClass.get_sensor_amount("Connected_Wood_Planck")
+            sensor_amount = self.ConfigClass.get_sensor_amount("Connected_Wood_Plank")
 
             for data, base_filename in [
                 (self.CWP_Capa_data, "CWP_Capa_data"),
@@ -293,17 +294,17 @@ class ConnectedBluetoothDevice:
             raise ConnectedBluetoothDeviceError("Erreur d'écriture CSV CWP")
 
 if __name__ == "__main__":
-    # # Fonction utilitaire pour vérifier l'existence des fichiers
+    # Fonction utilitaire pour vérifier l'existence des fichiers
     # def check_file_exists(directory, filename):
     #     full_path = os.path.join(directory, filename)
     #     exists = os.path.exists(full_path)
     #     print(f"Fichier {filename}: {'Existe' if exists else 'N''existe pas'}")
     #     return exists
 
-    # # Créer trois instances de ConnectedBluetoothDevice
-    # device1 = ConnectedBluetoothDevice()
-    # device2 = ConnectedBluetoothDevice()
-    # device3 = ConnectedBluetoothDevice()
+    # Créer trois instances de ConnectedBluetoothDevice
+     device1 = ConnectedBluetoothDevice()
+     device2 = ConnectedBluetoothDevice()
+     device3 = ConnectedBluetoothDevice()
 
     # # Simuler l'ajout de données pour chaque device
     # test_data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

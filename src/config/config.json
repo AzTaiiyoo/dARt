@@ -22,7 +22,7 @@
       "active": false
     },
     {
-      "device": "Connected_Wood_Planck",
+      "device": "Connected_Wood_Plank",
       "values_string": "19b",
       "values": 19,
       "amount": 3,
@@ -50,7 +50,7 @@
       "port": "/dev/tty.usbmodem11101"
     },
     {
-      "device": "Connected_Wood_Planck",
+      "device": "Connected_Wood_Plank",
       "port": "COM6"
     }
   ],

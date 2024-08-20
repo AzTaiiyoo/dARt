@@ -16,7 +16,7 @@ import streamlit as st
 import config.configuration as Conf
 import GridEyeKit as gek
 import logging
-# import ConnectedBluetoothDevice as cbd
+import ConnectedBluetoothDevice as cbd
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,12 +87,12 @@ class dARtToolkit:
         time.sleep(2)
 
         try:
-            for sensor, is_active in [("Myo", myo), ("Environment Control", env), ("Temperature Sensor", temp),
-                                      ("Sensitive Plates", plates)]:
+            for sensor, is_active in [("Myo", myo), ("SEN55", env), ("Grideye", temp),
+                                      ("Connected_Wood_Plank", plates)]:
                 if is_active:
                     sensor_count = self.configClass.get_sensor_amount(sensor)
                     for i in range(1, sensor_count + 1):
-                        sensor_id = f"{sensor}{i}" if i > 1 else sensor
+                        sensor_id = f"{sensor}_{i}" if i > 1 else sensor
                         port = self.configClass.get_device_port(sensor_id)
                         if sensor == "Grideye":
                             try:
@@ -100,11 +100,32 @@ class dARtToolkit:
                                 if grideye.connect():
                                     self.sensor_instances[sensor_id] = grideye
                                     grideye.start_recording()
+                                    self.configClass.set_status(sensor, "true")
                                     st.success(f"{sensor_id} connecté et initialisé ✅")
                                 else:
                                     st.error(f"Échec de la connexion à {sensor_id}. Veuillez vérifier la connexion.")
                             except gek.GridEYEError as e:
                                 st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        if sensor == "Connected_Wood_Plank":
+                            try:
+                                connected_wood_plank = cbd.ConnectedBluetoothDevice()
+                                self.sensor_instances[sensor_id] = connected_wood_plank
+                                connected_wood_plank.listen_for_sen55()
+                                self.configClass.set_status(sensor, "true")
+                                st.success(f"{sensor_id} connecté et initialisé ✅")
+                            except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        if sensor == "SEN55":
+                            try:
+                                sen55 =cbd.ConnectedBluetoothDevice()
+                                self.sensor_instances[sensor_id] = sen55
+                                sen55.listen_for_sen55()
+                                self.configClass.set_status(sensor, "true")
+                                st.success(f"{sensor_id} connecté et initialisé ✅")
+                            except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         else:
                             st.success(f"{sensor_id} activé ✅")
 
@@ -122,6 +143,9 @@ class dARtToolkit:
                 if isinstance(sensor_instance, gek.GridEYEKit):
                     sensor_instance.stop_recording()
                     sensor_instance.close()
+                    self.configClass.set_status(sensor_id, "false")
+                if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
+                    sensor_instance.stop_flag = True
                     self.configClass.set_status(sensor_id, "false")
             self.sensor_instances.clear()
             time.sleep(2)
@@ -171,7 +195,7 @@ class dARtToolkit:
 
         with col2:
             env = st.toggle("Sen55", key="env")
-            plates = st.toggle("Connected Wood Planck", key="plates")
+            plates = st.toggle("Connected_Wood_Plank", key="plates")
             if st.button("Arrêter la session"):
                 self.stop_session()
 
