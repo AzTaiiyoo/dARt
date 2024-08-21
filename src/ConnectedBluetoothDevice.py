@@ -17,7 +17,9 @@ import pandas as pd
 import config.configuration as Conf
 import os
 import logging
+from pathlib import Path
 
+Main_path = Path(__file__).parents[0]
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -51,10 +53,10 @@ class ConnectedBluetoothDevice:
 
             self.SEN55_filename = self.config['filenames']['SEN55']
 
-            self.SEN55_path = os.path.join(self.DIRECTORY, self.config['filenames']['SEN55'])
-            self.CWP_SG_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_SG'])
-            self.CWP_Capa_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_Capa'])
-            self.CWP_Piezos_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
+            self.SEN55_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['SEN55'])
+            self.CWP_SG_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_SG'])
+            self.CWP_Capa_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Capa'])
+            self.CWP_Piezos_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
 
             self.SEN55_data = []
             self.CWP_SG_data = []

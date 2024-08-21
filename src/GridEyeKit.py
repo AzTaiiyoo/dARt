@@ -23,9 +23,11 @@ import pandas as pd
 import config.configuration as Conf
 import os
 import logging
+from pathlib import Path
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+Main_path = Path(__file__).parents[0]
 
 class GridEYEError(Exception):
     """Base exception for GridEYE errors."""
@@ -58,7 +60,7 @@ class GridEYEKit:
         self.port = port
         self.csv_directory = self.config["directories"]["csv"]
         self.csv_filename = self.config["filenames"]["Grideye"]
-        self.csv_path = os.path.join(self.csv_directory, self.csv_filename)
+        self.csv_path = os.path.join(Main_path,self.csv_directory, self.csv_filename)
 
         try:
             self.ser = serial.Serial(

@@ -16,10 +16,13 @@ import plotly.express as px
 import os
 import config.configuration as conf
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class GridEyeDatabaseError (Exception):
+Main_path = Path(__file__).parents[1]
+
+class GridEyeDatabaseError(Exception):
     """Exception personnalisée pour GridEyeDatabase"""
     pass
 
@@ -42,7 +45,7 @@ class GridEyeDatabase:
             self.ConfigClass = conf.Config()
             self.config = self.ConfigClass.config
             self.directory = self.config['directories']['database']
-            self.csv_path = os.path.join(self.config['directories']['csv'], self.config['filenames']['Grideye'])
+            self.csv_path = os.path.join(Main_path, self.config['directories']['csv'], self.config['filenames']['Grideye'])
         except Exception as e:
             logging.error(f"Error initializing GridEyeDatabase: {str(e)}")
             raise GridEyeDatabaseError(f"Error initializing GridEyeDatabase: {str(e)}")
@@ -55,12 +58,13 @@ class GridEyeDatabase:
         @param csv_path The path to the CSV file containing the Grid-EYE data.
         @return A pandas DataFrame containing the processed Grid-EYE data.
         """
-        try :
+        try:
             df = pd.read_csv(csv_path, parse_dates=['timestamp'])
             df['avg_temp'] = df.iloc[:, 2:].mean(axis=1)  # Calculate average temperature
+            return df
         except Exception as e:
             logging.error(f"Error loading data: {str(e)}")
-        return df
+            return None
 
     def run(self):
         """
@@ -84,8 +88,8 @@ class GridEyeDatabase:
 
             st.subheader("Temperature Evolution Over Time")
             fig = px.line(filtered_df, x='timestamp', y=['thermistor', 'avg_temp'],
-                        labels={'value': 'Temperature', 'variable': 'Sensor'},
-                        title='Thermistor and Average Cell Temperature Over Time')
+                          labels={'value': 'Temperature', 'variable': 'Sensor'},
+                          title='Thermistor and Average Cell Temperature Over Time')
             st.plotly_chart(fig, use_container_width=True)
 
             if st.checkbox("Show raw data"):
@@ -116,8 +120,6 @@ def main():
     except GridEyeDatabaseError as e:
         logging.error(f"Error running GridEyeDatabase: {str(e)}")
         st.error(f"Error running GridEyeDatabase: {str(e)}")
-        
-        
 
 if __name__ == "__main__":
     main()

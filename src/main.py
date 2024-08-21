@@ -16,10 +16,13 @@ import streamlit as st
 import config.configuration as Conf
 import GridEyeKit as gek
 import logging
-import ConnectedBluetoothDevice as cbd
+from pathlib import Path
+import sys
+# import ConnectedBluetoothDevice as cbd
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+Main_path = Path(__file__).parents[0]
 
 class dARtToolkitError(Exception):
     """Exception personnalisée pour dARtToolkit"""
@@ -30,12 +33,12 @@ class dARtToolkit:
         try:
             self.configClass = Conf.Config()
             self.config = self.configClass.config
-
+            
             self.sensor_instances = {}
-
+            
             self.DIRECTORY = self.config["directories"]["database"]
+            
             self.PAGE_TITLE = "dARt Toolkit"
-
             self.CUSTOM_CSS = """
             <style>
             .stSidebar .stSuccess {
@@ -44,14 +47,14 @@ class dARtToolkit:
             .custom-divider {
                 border-top: 2px solid #f0f2f6;
                 width: 75%;
-
+            }
             .bottom-buttons {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    padding: 10px;
-                    background-color: white;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 10px;
+                background-color: white;
             }
             </style>
             """
@@ -61,7 +64,7 @@ class dARtToolkit:
 
     def list_database_files(self):
         try:
-            return [f[:-3] for f in os.listdir(self.DIRECTORY) if f.endswith('_database.py')]
+            return [f[:-3] for f in os.listdir(os.path.join(Main_path, self.DIRECTORY)) if f.endswith('_database.py')]
         except OSError as e:
             logging.error(f"Error reading system database folder: {str(e)}")
             raise dARtToolkitError("Error reading database folder")
@@ -76,7 +79,7 @@ class dARtToolkit:
             logging.error(f"Error loading module: {module_name}: {str(e)}")
             raise dARtToolkitError(f"Error loading module: {module_name}")
 
-    def activate_sensors(self,myo, env, temp, plates):
+    def activate_sensors(self, myo, env, temp, plates):
         session_holder = st.empty()
 
         if not any([myo, env, temp, plates]):
@@ -106,29 +109,28 @@ class dARtToolkit:
                                     st.error(f"Échec de la connexion à {sensor_id}. Veuillez vérifier la connexion.")
                             except gek.GridEYEError as e:
                                 st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        if sensor == "Connected_Wood_Plank":
-                            try:
-                                connected_wood_plank = cbd.ConnectedBluetoothDevice()
-                                self.sensor_instances[sensor_id] = connected_wood_plank
-                                connected_wood_plank.listen_for_sen55()
-                                self.configClass.set_status(sensor, "true")
-                                st.success(f"{sensor_id} connecté et initialisé ✅")
-                            except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
-                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        if sensor == "SEN55":
-                            try:
-                                sen55 =cbd.ConnectedBluetoothDevice()
-                                self.sensor_instances[sensor_id] = sen55
-                                sen55.listen_for_sen55()
-                                self.configClass.set_status(sensor, "true")
-                                st.success(f"{sensor_id} connecté et initialisé ✅")
-                            except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
-                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        else:
-                            st.success(f"{sensor_id} activé ✅")
-
+                        # if sensor == "Connected_Wood_Plank":
+                        #     try:
+                        #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
+                        #         self.sensor_instances[sensor_id] = connected_wood_plank
+                        #         connected_wood_plank.listen_for_sen55()
+                        #         self.configClass.set_status(sensor, "true")
+                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
+                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        # if sensor == "SEN55":
+                        #     try:
+                        #         sen55 =cbd.ConnectedBluetoothDevice()
+                        #         self.sensor_instances[sensor_id] = sen55
+                        #         sen55.listen_for_sen55()
+                        #         self.configClass.set_status(sensor, "true")
+                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
+                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        # else:
+                        #     st.success(f"{sensor_id} activé ✅")
         except Exception as e:
             st.error(f"Une erreur inattendue s'est produite: {str(e)}")
             logging.error(f"Une erreur inattendue s'est produite lors de l'initialisation des capteurs: {str(e)}")
@@ -144,9 +146,9 @@ class dARtToolkit:
                     sensor_instance.stop_recording()
                     sensor_instance.close()
                     self.configClass.set_status(sensor_id, "false")
-                if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
-                    sensor_instance.stop_flag = True
-                    self.configClass.set_status(sensor_id, "false")
+                # if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
+                #     sensor_instance.stop_flag = True
+                #     self.configClass.set_status(sensor_id, "false")
             self.sensor_instances.clear()
             time.sleep(2)
             session_holder.success("Session arrêtée ✅")
@@ -221,7 +223,7 @@ class dARtToolkit:
 
     def database_view(self, selected_database):
         try:
-            module_path = os.path.join(self.DIRECTORY, f"{selected_database}.py")
+            module_path = os.path.join(str(Main_path), self.DIRECTORY, f"{selected_database}.py")
             db_module = self.load_module(selected_database, module_path)
 
             if hasattr(db_module, 'main'):

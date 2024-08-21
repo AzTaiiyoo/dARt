@@ -16,8 +16,10 @@ import plotly.express as px
 import os
 import config.configuration as conf
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+Main_path = Path(__file__).parents[1]
 
 class SEN55DatabaseError(Exception):
     """Exception personnalisée pour SEN55Database"""
@@ -42,7 +44,7 @@ class SEN55Database:
             self.ConfigClass = conf.Config()
             self.config = self.ConfigClass.config
             self.directory = self.config['directories']['database']
-            self.csv_path = os.path.join(self.config['directories']['csv'], self.config['filenames']['SEN55'])
+            self.csv_path = os.path.join(Main_path, self.config['directories']['csv'], self.config['filenames']['SEN55'])
         except Exception as e:
             logging.error(f"Error initializing SEN55Database: {str(e)}")
             raise SEN55DatabaseError(f"Error initializing SEN55Database: {str(e)}")
@@ -92,7 +94,7 @@ class SEN55Database:
             st.subheader("Data Visualization")
 
             columns_to_plot = st.multiselect("Select columns to plot",
-                                            [col for col in df.columns if col != 'time'])
+                                             [col for col in df.columns if col != 'time'])
 
             if columns_to_plot:
                 fig = px.line(df, x='time', y=columns_to_plot, title='SEN55 Data Over Time')
