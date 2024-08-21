@@ -4,7 +4,7 @@ FROM debian:bullseye-slim
 # Éviter les interactions lors de l'installation des paquets
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Mettre à jour le système et installer les dépendances nécessaires, y compris pour bluepy et setcap
+# Mettre à jour le système et installer les dépendances nécessaires
 RUN apt-get update && apt-get install -y \
     wget \
     build-essential \
@@ -41,14 +41,17 @@ RUN update-alternatives --install /usr/bin/python python /usr/local/bin/python3.
 # Définir le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers du projet (au lieu de cloner le dépôt)
+# Copier les fichiers du projet
 COPY . .
 
-# Installer les dépendances du projet
-RUN pip install --no-cache-dir -r requirements.txt
+# Installer les dépendances du projet et Streamlit
+RUN pip install --no-cache-dir -r requirements.txt streamlit
 
 # Ajouter les permissions nécessaires pour bluepy
 RUN setcap 'cap_net_raw,cap_net_admin+eip' $(readlink -f $(which python))
 
-# Commande par défaut pour exécuter le script principal
-CMD ["python", "src/main.py"]
+# Exposer le port utilisé par Streamlit (par défaut 8501)
+EXPOSE 8501
+
+# Commande pour exécuter l'application Streamlit
+CMD ["streamlit", "run", "src/main.py", "--server.address", "0.0.0.0"]
