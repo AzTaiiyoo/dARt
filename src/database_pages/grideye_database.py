@@ -17,6 +17,7 @@ import os
 import config.configuration as conf
 import logging
 from pathlib import Path
+import glob
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -45,10 +46,19 @@ class GridEyeDatabase:
             self.ConfigClass = conf.Config()
             self.config = self.ConfigClass.config
             self.directory = self.config['directories']['database']
-            self.csv_path = os.path.join(Main_path, self.config['directories']['csv'], self.config['filenames']['Grideye'])
+            self.csv_directory = os.path.join(Main_path, self.config['directories']['csv'])
+            self.csv_pattern = os.path.join(self.csv_directory, f"{self.config['filenames']['Grideye'].split('.')[0]}*.csv")
+            self.csv_files = self.get_csv_files()
         except Exception as e:
             logging.error(f"Error initializing GridEyeDatabase: {str(e)}")
             raise GridEyeDatabaseError(f"Error initializing GridEyeDatabase: {str(e)}")
+
+    def get_csv_files(self):
+        """
+        @brief Get a list of all CSV files matching the pattern.
+        @return A list of CSV file paths.
+        """
+        return glob.glob(self.csv_pattern)
 
     @staticmethod
     @st.cache_data
@@ -66,23 +76,16 @@ class GridEyeDatabase:
             logging.error(f"Error loading data: {str(e)}")
             return None
 
-    def run(self):
+    def display_csv_data(self, csv_path):
         """
-        @brief Run the Streamlit application for Grid-EYE data visualization.
-
-        This method sets up the Streamlit interface, loads the data,
-        and creates interactive visualizations for the Grid-EYE sensor data.
+        @brief Display data for a single CSV file.
+        @param csv_path The path to the CSV file to display.
         """
-        st.write("""
-        # Grid-EYE Database
+        df = self.load_data(csv_path)
 
-        This is the Grid-EYE database page. You can visualize the **evolution of data** during a session.
-        """)
-        try:
-            df = self.load_data(self.csv_path)
-
-            start_date = st.date_input("Start date", df['timestamp'].min().date())
-            end_date = st.date_input("End date", df['timestamp'].max().date())
+        if df is not None:
+            start_date = st.date_input("Start date", df['timestamp'].min().date(), key=f"start_date_{csv_path}")
+            end_date = st.date_input("End date", df['timestamp'].max().date(), key=f"end_date_{csv_path}")
 
             filtered_df = df[(df['timestamp'].dt.date >= start_date) & (df['timestamp'].dt.date <= end_date)]
 
@@ -92,28 +95,45 @@ class GridEyeDatabase:
                           title='Thermistor and Average Cell Temperature Over Time')
             st.plotly_chart(fig, use_container_width=True)
 
-            if st.checkbox("Show raw data"):
+            if st.checkbox("Show raw data", key=f"show_raw_{csv_path}"):
                 st.subheader("Raw data")
                 st.write(filtered_df)
 
-            if st.button("Download filtered data as CSV"):
+            if st.button("Download filtered data as CSV", key=f"download_{csv_path}"):
                 csv = filtered_df.to_csv(index=False)
                 st.download_button(
                     label="Download CSV",
                     data=csv,
-                    file_name="filtered_miu_data.csv",
+                    file_name=f"filtered_{os.path.basename(csv_path)}",
                     mime="text/csv",
+                    key=f"download_button_{csv_path}"
                 )
+        else:
+            st.error(f"Unable to load the CSV file: {csv_path}. Please check the file and try again.")
+
+    def run(self):
+        st.write("""
+        # Grid-EYE Database
+
+        This is the Grid-EYE database page. You can visualize the **evolution of data** during a session.
+        Select a tab to view data from different CSV files.
+        """)
+
+        try:
+            # Create tabs for each CSV file
+            csv_files = [os.path.basename(f) for f in self.csv_files]
+            tabs = st.tabs(csv_files)
+
+            # Display data for each CSV file in its corresponding tab
+            for tab, csv_file in zip(tabs, self.csv_files):
+                with tab:
+                    self.display_csv_data(csv_file)
+
         except Exception as e:
             st.write(f"Error running application: {str(e)}")
             logging.error(f"Error running application: {str(e)}")
 
 def main():
-    """
-    @brief The main function to run the GridEyeDatabase application.
-
-    This function initializes and runs the GridEyeDatabase application.
-    """
     try:
         app = GridEyeDatabase()
         app.run()
