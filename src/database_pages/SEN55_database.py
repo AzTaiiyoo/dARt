@@ -7,22 +7,22 @@ SEN55 sensor data using Streamlit and Plotly.
 
 @author [Your Name]
 @date [Current Date]
-@version 1.0
+@version 1.1
 """
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import os
-import config.configuration as conf
 import logging
 from pathlib import Path
+import config.configuration as conf
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 Main_path = Path(__file__).parents[1]
 
 class SEN55DatabaseError(Exception):
-    """Exception personnalisée pour SEN55Database"""
+    """Custom exception for SEN55Database"""
     pass
 
 class SEN55Database:
@@ -41,13 +41,25 @@ class SEN55Database:
         Sets up the configuration and file paths for the SEN55 data.
         """
         try:
-            self.ConfigClass = conf.Config()
-            self.config = self.ConfigClass.config
-            self.directory = self.config['directories']['database']
-            self.csv_path = os.path.join(Main_path, self.config['directories']['csv'], self.config['filenames']['SEN55'])
+            self.config = conf.Config().config
+            self.csv_directory = Main_path / self.config['directories']['csv']
+            self.csv_pattern = f"{self.config['filenames']['SEN55'].split('.')[0]}*.csv"
+            self.csv_path = self.csv_directory / self.config['filenames']['SEN55']
+            self.csv_files = self.get_csv_files()
         except Exception as e:
             logging.error(f"Error initializing SEN55Database: {str(e)}")
             raise SEN55DatabaseError(f"Error initializing SEN55Database: {str(e)}")
+        
+    def get_csv_files(self):
+        """
+        @brief Get a list of all CSV files matching the pattern.
+        @return A list of CSV file paths.
+        """
+        try:
+            return list(self.csv_directory.glob(self.csv_pattern))
+        except Exception as e:
+            logging.error(f"Error getting CSV files: {str(e)}")
+            return []
     
     @staticmethod
     @st.cache_data
@@ -70,6 +82,7 @@ class SEN55Database:
                     st.warning("Unable to parse 'time' column as datetime. Using it as is.")
         except Exception as e:
             logging.error(f"Error loading data: {str(e)}")
+            df = pd.DataFrame()
 
         return df
 
@@ -86,34 +99,45 @@ class SEN55Database:
         This is the SEN55 database page. You can visualize the **evolution of data** during a session.
         """)
         try:
-            df = self.load_data(self.csv_path)
+            csv_files = [f.name for f in self.get_csv_files()]
+            tabs = st.tabs(csv_files)
+            
+            for tab, csv_file in zip(tabs, csv_files):
+                with tab:
+                    df = self.load_data(self.csv_directory / csv_file)
+                    self.display_data(df)
 
-            st.subheader("Raw data")
-            st.write(df)
-
-            st.subheader("Data Visualization")
-
-            columns_to_plot = st.multiselect("Select columns to plot",
-                                             [col for col in df.columns if col != 'time'])
-
-            if columns_to_plot:
-                fig = px.line(df, x='time', y=columns_to_plot, title='SEN55 Data Over Time')
-                st.plotly_chart(fig)
-
-            st.subheader("Statistics")
-            st.write(df.describe())
-
-            st.subheader("Download Data")
-            csv = df.to_csv(index=False)
-            st.download_button(
-                label="Download data as CSV",
-                data=csv,
-                file_name="SEN55_data.csv",
-                mime="text/csv",
-            )
         except Exception as e:
-            st.write(f"Error running application: {str(e)}")
+            st.error(f"Error running application: {str(e)}")
             logging.error(f"Error running application: {str(e)}")
+
+    def display_data(self, df):
+        """
+        @brief Display the data and create visualizations.
+        @param df The DataFrame containing the SEN55 data.
+        """
+        st.subheader("Raw data")
+        st.write(df)
+
+        st.subheader("Data Visualization")
+        columns_to_plot = st.multiselect("Select columns to plot",
+                                         [col for col in df.columns if col != 'time'])
+
+        if columns_to_plot:
+            fig = px.line(df, x='time', y=columns_to_plot, title='SEN55 Data Over Time')
+            st.plotly_chart(fig)
+
+        st.subheader("Statistics")
+        st.write(df.describe())
+
+        st.subheader("Download Data")
+        csv = df.to_csv(index=False)
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name="SEN55_data.csv",
+            mime="text/csv",
+        )
 
 def main():
     """

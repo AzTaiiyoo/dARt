@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  dart-app:
+    build: .
+    image: dart-streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    privileged: true
+    command: streamlit run src/main.py --server.address 0.0.0.0

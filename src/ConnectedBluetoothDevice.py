@@ -44,7 +44,7 @@ class ConnectedBluetoothDevice:
             self.config = self.ConfigClass.config
 
             ConnectedBluetoothDevice._instance_count += 1
-            self.instance_id = ConnectedBluetoothDevice._instance_count - 1
+            self.instance_id = ConnectedBluetoothDevice._instance_count
 
             self.stop_flag = False
             self.current_time = time.strftime("%Y-%m-%d %H:%M:%S")

@@ -103,6 +103,7 @@ class dARtToolkit:
                                 if grideye.connect():
                                     self.sensor_instances[sensor_id] = grideye
                                     grideye.start_recording()
+                                    grideye.instance_id = i
                                     self.configClass.set_status(sensor, "true")
                                     st.success(f"{sensor_id} connecté et initialisé ✅")
                                 else:

@@ -42,7 +42,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/local/bin/python3.
 WORKDIR /app
 
 # Copier les fichiers du projet
-COPY . .
+COPY requirements.txt .
 
 # Installer les dépendances du projet et Streamlit
 RUN pip install --no-cache-dir -r requirements.txt streamlit

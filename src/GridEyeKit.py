@@ -52,6 +52,8 @@ class GridEYEKit:
         @param port The serial port to connect to the Grid-EYE sensor.
         @throws ConnectionError If unable to initialize the serial port.
         """
+        self.instance_id = 1 
+        
         self._connected = False
         self.stop_flag = False
         
@@ -333,15 +335,10 @@ class GridEYEKit:
         df = pd.DataFrame(records)
         try:
             base_filename = self.csv_filename[:-4]
-            existing_files = [f for f in os.listdir(self.csv_directory) if f.startswith(base_filename)]
-            if existing_files and self.ConfigClass.get_sensor_amount("Grideye") != 1:
-                numbers = [int(f.split('_')[-1].split('.')[0]) for f in existing_files if f.split('_')[-1].split('.')[0].isdigit()]
-                if numbers:
-                    last_number = max(numbers)
-                    new_number = last_number + 1
-                else:
-                    new_number = 1
-                new_filename = f"{base_filename}_{new_number}.csv"
+            sensor_amount = self.ConfigClass.get_sensor_amount("Grideye")
+
+            if sensor_amount > 1:
+                new_filename = f"{base_filename}_{self.instance_id}.csv"
             else:
                 new_filename = self.csv_filename
 
@@ -350,7 +347,7 @@ class GridEYEKit:
             print(f"Data saved to {new_filename}")
         except IOError as e:
             print(f"Error writing data to CSV file: {e}")
-
+            
 if __name__ == "__main__":
     try:
         port = "/dev/tty.usbmodem11101"  # This should be replaced with the actual port
