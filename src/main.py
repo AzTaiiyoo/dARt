@@ -114,8 +114,9 @@ class dARtToolkit:
                         #     try:
                         #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
                         #         self.sensor_instances[sensor_id] = connected_wood_plank
-                        #         connected_wood_plank.listen_for_sen55()
+                        #         connected_wood_plank.instance_id = i
                         #         self.configClass.set_status(sensor, "true")
+                        #         connected_wood_plank.listen_for_sen55()
                         #         st.success(f"{sensor_id} connecté et initialisé ✅")
                         #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
                         #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
@@ -124,14 +125,15 @@ class dARtToolkit:
                         #     try:
                         #         sen55 =cbd.ConnectedBluetoothDevice()
                         #         self.sensor_instances[sensor_id] = sen55
-                        #         sen55.listen_for_sen55()
                         #         self.configClass.set_status(sensor, "true")
+                        #         sen55.instance_id = i
+                        #         sen55.listen_for_sen55()
                         #         st.success(f"{sensor_id} connecté et initialisé ✅")
                         #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
                         #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        # else:
-                        #     st.success(f"{sensor_id} activé ✅")
+                        else:
+                            st.error(f"Capteur inconnu: {sensor}")
         except Exception as e:
             st.error(f"Une erreur inattendue s'est produite: {str(e)}")
             logging.error(f"Une erreur inattendue s'est produite lors de l'initialisation des capteurs: {str(e)}")
@@ -141,6 +143,12 @@ class dARtToolkit:
     def stop_session(self):
         session_holder = st.empty()
         session_holder.info("Arrêt de la session...")
+        active_sensors = [device['device'] for device in self.config['devices'] if device['active']]
+        
+        if not active_sensors: 
+            session_holder.warning("No session is currently active.")
+            return
+        
         try:
             for sensor_id, sensor_instance in self.sensor_instances.items():
                 if isinstance(sensor_instance, gek.GridEYEKit):

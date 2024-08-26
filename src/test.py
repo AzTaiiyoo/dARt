@@ -1,23 +1,25 @@
 """
 @file bluetooth_sensor_data.py
-@brief Module for collecting data from BLE SEN55 and ConnectedWoodPlank sensors.
+@brief Module for collecting data from BLE SEN55 and Connected_Wood_Plank sensors.
 
 This module handles the discovery, collection, and recording of data
-from BLE SEN55 and ConnectedWoodPlank sensors.
+from BLE SEN55 and Connected_Wood_Plank sensors.
 
 @author [Your Name]
 @date [Current Date]
 @version 1.0
 """
 
-# from bluepy.btle import Scanner, DefaultDelegate, BTLEException
+#from bluepy.btle import Scanner, DefaultDelegate, BTLEException
 import struct
 import time
 import pandas as pd
 import config.configuration as Conf
 import os
 import logging
+from pathlib import Path
 
+Main_path = Path(__file__).parents[0]
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -30,8 +32,6 @@ class ConnectedBluetoothDevice:
     @class ConnectedBluetoothDevice
     @brief Main class for handling Bluetooth device connections and data collection.
     """
-    _instance_count = 0
-
     def __init__(self):
         """
         @brief Initialize the ConnectedBluetoothDevice object.
@@ -41,19 +41,19 @@ class ConnectedBluetoothDevice:
             self.ConfigClass = Conf.Config()
             self.config = self.ConfigClass.config
 
-            ConnectedBluetoothDevice._instance_count += 1
-            self.instance_id = ConnectedBluetoothDevice._instance_count - 1
+            self.instance_id = 1
 
             self.stop_flag = False
             self.current_time = time.strftime("%Y-%m-%d %H:%M:%S")
 
             self.DIRECTORY = self.config['directories']['csv']
+
             self.SEN55_filename = self.config['filenames']['SEN55']
 
-            self.SEN55_path = os.path.join(self.DIRECTORY, self.config['filenames']['SEN55'])
-            self.CWP_SG_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_SG'])
-            self.CWP_Capa_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_Capa'])
-            self.CWP_Piezos_path = os.path.join(self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
+            self.SEN55_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['SEN55'])
+            self.CWP_SG_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_SG'])
+            self.CWP_Capa_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Capa'])
+            self.CWP_Piezos_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
 
             self.SEN55_data = []
             self.CWP_SG_data = []
@@ -125,7 +125,7 @@ class ConnectedBluetoothDevice:
     #                                 values = struct.unpack(self.ConfigClass.get_values_string(name_device), data[:self.ConfigClass.get_values(name_device)])
     #                                 logging.debug(', '.join(str(value) for value in values))
 
-    #                                 if name_device == "ConnectedWoodPlanck":
+    #                                 if name_device == "Connected_Wood_Plank":
     #                                     self.CWP_data_to_array(values)
     #                                 elif name_device == "SEN55":
     #                                     self.SEN55_data_to_array(values)
@@ -166,26 +166,28 @@ class ConnectedBluetoothDevice:
         try:
             df = pd.DataFrame(self.SEN55_data)
             base_filename = self.SEN55_filename[:-4]
-            existing_files = [f for f in os.listdir(self.DIRECTORY) if f.startswith(base_filename)]
-            if existing_files and self.ConfigClass.get_sensor_amount("SEN55") != 1:
-                numbers = [int(f.split('_')[-1].split('.')[0]) for f in existing_files if f.split('_')[-1].split('.')[0].isdigit()]
-                if numbers:
-                    last_number = max(numbers)
-                    new_number = last_number + 1
-                else:
-                    new_number = 1
-                new_filename = f"{base_filename}_{new_number}.csv"
+            sensor_amount = self.ConfigClass.get_sensor_amount("SEN55")
+
+            if sensor_amount > 1:
+                new_filename = f"{base_filename}_{self.instance_id}.csv"
             else:
                 new_filename = self.SEN55_filename
+
             new_filepath = os.path.join(self.DIRECTORY, new_filename)
-            df.to_csv(new_filepath, mode="a", header=False, index=False)
+
+            # Vérifier si le fichier existe déjà pour déterminer si nous devons inclure l'en-tête
+            file_exists = os.path.isfile(new_filepath)
+
+            df.to_csv(new_filepath, mode="a", header=not file_exists, index=False)
+            logging.info(f"Données SEN55 enregistrées dans {new_filename}")
+            self.SEN55_data.clear()  # Nettoyer les données après l'écriture
         except Exception as e:
             logging.error(f"Erreur lors de l'écriture des données SEN55 dans le CSV: {str(e)}")
             raise ConnectedBluetoothDeviceError("Erreur d'écriture CSV SEN55")
 
     def CWP_data_to_array(self, values):
         """
-        @brief Process and store ConnectedWoodPlank sensor data.
+        @brief Process and store Connected_Wood_Plank sensor data.
         @param values The sensor values to process.
         @exception ConnectedBluetoothDeviceError If CWP data processing fails.
         """
@@ -260,11 +262,11 @@ class ConnectedBluetoothDevice:
 
     def CWP_data_to_csv(self):
         """
-        @brief Write ConnectedWoodPlank data to CSV files.
+        @brief Write Connected_Wood_Plank data to CSV files.
         @exception ConnectedBluetoothDeviceError If CSV writing fails.
         """
         try:
-            sensor_amount = self.ConfigClass.get_sensor_amount("Connected_Wood_Planck")
+            sensor_amount = self.ConfigClass.get_sensor_amount("Connected_Wood_Plank")
 
             for data, base_filename in [
                 (self.CWP_Capa_data, "CWP_Capa_data"),
@@ -279,7 +281,7 @@ class ConnectedBluetoothDevice:
                     else:
                         new_filename = f"{base_filename}.csv"
 
-                    new_path = os.path.join(self.DIRECTORY, new_filename)
+                    new_path = os.path.join(Main_path, self.DIRECTORY, new_filename)
                     df.to_csv(new_path, mode="w", header=True, index=False)
                     logging.info(f"Données {base_filename} enregistrées dans {new_filename}")
                     data.clear()
@@ -300,36 +302,39 @@ if __name__ == "__main__":
 
     # Créer trois instances de ConnectedBluetoothDevice
     device1 = ConnectedBluetoothDevice()
+    device1.instance_id = 0
     device2 = ConnectedBluetoothDevice()
+    device2.instance_id = 1
     device3 = ConnectedBluetoothDevice()
+    device3.instance_id = 2
 
-    # Simuler l'ajout de données pour chaque device
+    # # Simuler l'ajout de données pour chaque device
     test_data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
-    # Device 1
+    # # Device 1
     device1.CWP_data_to_array([*test_data, 55])  # Données de configuration
     device1.CWP_data_to_array([*test_data, 15])  # Données SG
     device1.CWP_data_to_array([*test_data, 25])  # Données Piezos
     device1.CWP_data_to_array([*test_data, 35])  # Données Capa
 
-    # Device 2
+    # # Device 2
     device2.CWP_data_to_array([*test_data, 55])
     device2.CWP_data_to_array([*test_data, 15])
     device2.CWP_data_to_array([*test_data, 25])
     device2.CWP_data_to_array([*test_data, 35])
 
-    # Device 3
+    # # Device 3
     device3.CWP_data_to_array([*test_data, 55])
     device3.CWP_data_to_array([*test_data, 15])
     device3.CWP_data_to_array([*test_data, 25])
     device3.CWP_data_to_array([*test_data, 35])
 
-    # Écrire les données dans les fichiers CSV
+    # # Écrire les données dans les fichiers CSV
     device1.CWP_data_to_csv()
     device2.CWP_data_to_csv()
     device3.CWP_data_to_csv()
 
-    # Vérifier l'existence des fichiers créés
+    # # Vérifier l'existence des fichiers créés
     directory = device1.DIRECTORY  # Supposons que tous les devices utilisent le même répertoire
 
     expected_files = [

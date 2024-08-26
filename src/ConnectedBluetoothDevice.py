@@ -32,8 +32,6 @@ class ConnectedBluetoothDevice:
     @class ConnectedBluetoothDevice
     @brief Main class for handling Bluetooth device connections and data collection.
     """
-    _instance_count = 0
-
     def __init__(self):
         """
         @brief Initialize the ConnectedBluetoothDevice object.
@@ -43,8 +41,7 @@ class ConnectedBluetoothDevice:
             self.ConfigClass = Conf.Config()
             self.config = self.ConfigClass.config
 
-            ConnectedBluetoothDevice._instance_count += 1
-            self.instance_id = ConnectedBluetoothDevice._instance_count
+            self.instance_id = 1
 
             self.stop_flag = False
             self.current_time = time.strftime("%Y-%m-%d %H:%M:%S")

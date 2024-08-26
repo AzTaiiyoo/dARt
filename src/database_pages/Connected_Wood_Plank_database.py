@@ -73,11 +73,10 @@ class CWPDatabase:
         
         instances = set()
         for file in all_files:
-            match = re.search(r'_(\d+)\.csv$', file.name)
+            match = re.search(r'_data(?:_(\d+))?\.csv$', file.name)
             if match:
-                instances.add(int(match.group(1)))
-            else:
-                instances.add(0)  # For files without instance number
+                instance = int(match.group(1) or 0)  # If no number, use 0
+                instances.add(instance)
         
         return sorted(instances)
 
@@ -154,7 +153,7 @@ class CWPDatabase:
             instances = self.get_instances()
             
             # Main tab for all CWP types
-            main_tab, *instance_tabs = st.tabs(["All CWP Types"] + [f"Instance {i}" for i in instances if i != 0])
+            main_tab, *instance_tabs = st.tabs(["All CWP Types"] + [f"Instance {i}" for i in instances])
             
             with main_tab:
                 for cwp_type in self.cwp_files:
@@ -166,10 +165,12 @@ class CWPDatabase:
                         st.warning(f"No data files found for {cwp_type}")
             
             # Instance tabs
-            for instance, tab in zip([i for i in instances if i != 0], instance_tabs):
+            for instance, tab in zip(instances, instance_tabs):
                 with tab:
                     for cwp_type in self.cwp_files:
                         files = [f for f in self.get_csv_files(cwp_type) if f.name.endswith(f"_{instance}.csv")]
+                        if not files and instance == 0:
+                            files = [f for f in self.get_csv_files(cwp_type) if not re.search(r'_\d+\.csv$', f.name)]
                         if files:
                             df = self.load_data(files[0])
                             self.display_data(df, f"{cwp_type} - Instance {instance}")
