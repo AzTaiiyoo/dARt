@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-dev \
     python3-dev \
     libcap2-bin \
+    python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
 # Télécharger et installer Python 3.12.4
@@ -52,6 +53,9 @@ RUN setcap 'cap_net_raw,cap_net_admin+eip' $(readlink -f $(which python))
 
 # Exposer le port utilisé par Streamlit (par défaut 8501)
 EXPOSE 8501
+
+# Droit d'accès
+RUN chmod +x /usr/local/bin/python3.12
 
 # Commande pour exécuter l'application Streamlit
 CMD ["streamlit", "run", "src/main.py", "--server.address", "0.0.0.0"]

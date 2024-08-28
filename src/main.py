@@ -19,6 +19,6 @@ def main():
         st.error(f"Critical error: {str(e)}")
     except Exception as e:
         st.error(f"An unexpected critical error occurred: {str(e)}")
-
+        
 if __name__ == "__main__":
     main()
