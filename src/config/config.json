@@ -5,7 +5,7 @@
             "values_string": "0b",
             "values": 0,
             "amount": 1,
-            "active": false
+            "active": "true"
         },
         {
             "device": "SEN55",
@@ -58,7 +58,8 @@
         "database": "database_pages",
         "csv": "csv_files_data",
         "logs": "logs",
-        "config": "config.json"
+        "config": "config.json",
+        "myo": "MyoSensor"
     },
     "filenames": {
         "Grideye": "Grideye_data.csv",

@@ -1,11 +1,12 @@
 """
-@brief dARt Toolkit: Core functionality for sensor activation and database visualization.
+@brief dARt Toolkit: A Streamlit application for sensor activation and database visualization.
 
-This module contains the main class and functions for the dARt Toolkit application.
+This module provides a user interface for activating various sensors and
+visualizing data from selected databases.
 
 @author [Your Name]
 @date [Current Date]
-@version 2.2
+@version 2.1
 """
 
 import os
@@ -16,12 +17,25 @@ import config.configuration as Conf
 import GridEyeKit as gek
 import logging
 from pathlib import Path
-import MyoSensor.Myo as Myo
+import sys
+import subprocess
+import psutil
+import signal
+# import ConnectedBluetoothDevice as cbd
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 Main_path = Path(__file__).parents[0]
 
+
+class Config:
+    def __init__(self):
+        with open('config/config.json', 'r') as config_file:
+            self.config = json.load(config_file)
+
+    def get_csv_output_directory(self):
+        return self.config.get('csv_output_directory', 'default/path/to/csv/output')
+        
 class dARtToolkitError(Exception):
     """Exception personnalisée pour dARtToolkit"""
     pass
@@ -31,8 +45,11 @@ class dARtToolkit:
         try:
             self.configClass = Conf.Config()
             self.config = self.configClass.config
+            
             self.sensor_instances = {}
+            
             self.DIRECTORY = self.config["directories"]["database"]
+            
             self.PAGE_TITLE = "dARt Toolkit"
             self.CUSTOM_CSS = """
             <style>
@@ -53,10 +70,109 @@ class dARtToolkit:
             }
             </style>
             """
+            self.myo_process = None
         except Exception as e:
             logging.error(f"Error initializing dARtToolkit: {str(e)}")
             raise dARtToolkitError("Init Error")
+        self.myo_process = None
+    def launch_myo_executable(self):
+        try:
+            # Récupérer le chemin du répertoire de sortie CSV depuis config.json
+            csv_dir = self.configClass.config['directories']['csv']
+            output_directory = os.path.join(Main_path, csv_dir)
+            print(f"base_dir : {Main_path}")
+            print(f"output_directory : {output_directory}")
+            
+            # Assurez-vous que le répertoire existe, sinon créez-le
+            os.makedirs(output_directory, exist_ok=True)
+            
+            # Chemin vers l'exécutable Myo (chemin relatif par rapport au script)
+            executable_path = os.path.join(Main_path, "MyoLinux/src/MyoApp")
+            print(f"executable_path: {executable_path}")
+            print(f"Permissions executables : {os.access(executable_path, os.X_OK)}")
+            print(f"Permissions ecriture repertoire : {os.access(os.path.dirname(output_directory),os.W_OK)}")
+            
+            # Lancer l'exécutable avec seulement le chemin du fichier CSV
+            self.myo_process = subprocess.Popen([executable_path, output_directory], preexec_fn=os.setsid)
+            st.success(f"Exécutable Myo lancé avec succès. Données enregistrées dans : {output_directory}")
+
+            # Lisez la sortie en temps réel
+            for line in self.myo_process.stdout:
+                line = line.strip()
+                if "Connected to Myo" in line:
+                    message_placeholder.success("Myo connecté avec succès!")
+                elif "Error" in line:
+                    message_placeholder.error(f"Erreur Myo: {line}")
+                else:
+                    message_placeholder.text(f"Myo: {line}")
+            
+            # Mettre à jour le statut du capteur dans la configuration
+            self.configClass.set_status('MYO_Sensor', True)
+            
+        except Exception as e:
+            st.error(f"Erreur lors du lancement de l'exécutable Myo : {str(e)}")
+            logging.error(f"Erreur lors du lancement de l'exécutable Myo : {str(e)}")
+
+    def activate_sensors(self, myo, env, temp, plates):
+        session_holder = st.empty()
+
+        if not any([myo, env, temp, plates]):
+            session_holder.warning("Please, select at least one sensor.")
+            return
+
+        session_holder.info("Initialisation du capteur...")
+        time.sleep(2)
         
+        try:
+            if myo:
+                self.launch_myo_executable()
+            for sensor, is_active in [("Myo", myo), ("SEN55", env), ("Grideye", temp),
+                                      ("Connected_Wood_Plank", plates)]:
+                if is_active:
+                    sensor_count = self.configClass.get_sensor_amount(sensor)
+                    for i in range(1, sensor_count + 1):
+                        sensor_id = f"{sensor}_{i}" if i > 1 else sensor
+                        port = self.configClass.get_device_port(sensor_id)
+                        if sensor == "Grideye":
+                            try:
+                                grideye = gek.GridEYEKit(port)
+                                if grideye.connect():
+                                    self.sensor_instances[sensor_id] = grideye
+                                    grideye.start_recording()
+                                    self.configClass.set_status(sensor, "true")
+                                    st.success(f"{sensor_id} connecté et initialisé ✅")
+                                else:
+                                    st.error(f"Échec de la connexion à {sensor_id}. Veuillez vérifier la connexion.")
+                            except gek.GridEYEError as e:
+                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        # if sensor == "Connected_Wood_Plank":
+                        #     try:
+                        #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
+                        #         self.sensor_instances[sensor_id] = connected_wood_plank
+                        #         connected_wood_plank.listen_for_sen55()
+                        #         self.configClass.set_status(sensor, "true")
+                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
+                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        # if sensor == "SEN55":
+                        #     try:
+                        #         sen55 =cbd.ConnectedBluetoothDevice()
+                        #         self.sensor_instances[sensor_id] = sen55
+                        #         sen55.listen_for_sen55()
+                        #         self.configClass.set_status(sensor, "true")
+                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
+                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                        # else:
+                        #     st.success(f"{sensor_id} activé ✅")
+        except Exception as e:
+            st.error(f"Une erreur inattendue s'est produite: {str(e)}")
+            logging.error(f"Une erreur inattendue s'est produite lors de l'initialisation des capteurs: {str(e)}")
+
+        session_holder.empty()
+
     def list_database_files(self):
         try:
             return [f[:-3] for f in os.listdir(os.path.join(Main_path, self.DIRECTORY)) if f.endswith('_database.py')]
@@ -74,105 +190,45 @@ class dARtToolkit:
             logging.error(f"Error loading module: {module_name}: {str(e)}")
             raise dARtToolkitError(f"Error loading module: {module_name}")
 
-    def activate_sensors(self, myo, env, temp, plates):
-        session_holder = st.empty()
-
-        if not any([myo, env, temp, plates]):
-            session_holder.warning("Please, select at least one sensor.")
-            return
-
-        session_holder.info("Initialisation du capteur...")
-        time.sleep(2)
-
-        try:
-            for sensor, is_active in [("Myo_Sensor", myo), ("SEN55", env), ("Grideye", temp),
-                                      ("Connected_Wood_Plank", plates)]:
-                if is_active:
-                    sensor_count = self.configClass.get_sensor_amount(sensor)
-                    for i in range(1, sensor_count + 1):
-                        sensor_id = f"{sensor}_{i}" if i > 1 else sensor
-                        port = self.configClass.get_device_port(sensor_id)
-                        if sensor == "Grideye":
-                            try:
-                                grideye = gek.GridEYEKit(port)
-                                if grideye.connect():
-                                    self.sensor_instances[sensor_id] = grideye
-                                    grideye.start_recording()
-                                    grideye.instance_id = i
-                                    self.configClass.set_status(sensor, "true")
-                                    st.success(f"{sensor_id} connecté et initialisé ✅")
-                                else:
-                                    st.error(f"Échec de la connexion à {sensor_id}. Veuillez vérifier la connexion.")
-                            except gek.GridEYEError as e:
-                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        if sensor == "Myo_Sensor":
-                            try:
-                                MyoSensor = Myo.MyoSensor()
-                                MyoSensor.launch_myo_executable()
-                                MyoSensor.instance_id = i
-                                self.sensor_instances[sensor_id] = MyoSensor
-                                self.configClass.set_status(sensor, "true")
-                                st.success(f"{sensor_id} connecté et initialisé ✅")
-                            except Exception as e:
-                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                            
-                        # if sensor == "Connected_Wood_Plank":
-                        #     try:
-                        #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
-                        #         self.sensor_instances[sensor_id] = connected_wood_plank
-                        #         connected_wood_plank.instance_id = i
-                        #         self.configClass.set_status(sensor, "true")
-                        #         connected_wood_plank.listen_for_sen55()
-                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
-                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
-                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        # if sensor == "SEN55":
-                        #     try:
-                        #         sen55 =cbd.ConnectedBluetoothDevice()
-                        #         self.sensor_instances[sensor_id] = sen55
-                        #         self.configClass.set_status(sensor, "true")
-                        #         sen55.instance_id = i
-                        #         sen55.listen_for_sen55()
-                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
-                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
-                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        else:
-                            st.error(f"Capteur inconnu: {sensor}")
-        except Exception as e:
-            st.error(f"Une erreur inattendue s'est produite: {str(e)}")
-            logging.error(f"Une erreur inattendue s'est produite lors de l'initialisation des capteurs: {str(e)}")
-
-        session_holder.empty()
 
     def stop_session(self):
         session_holder = st.empty()
         session_holder.info("Arrêt de la session...")
-        active_sensors = [device['device'] for device in self.config['devices'] if device['active']]
-        
-        if not active_sensors: 
-            session_holder.warning("No session is currently active.")
-            return
-        
         try:
+            print(f"DEUS VULTTTTTTT ?????")
+            # Arrêt de l'exécutable Myo
+            # Vérifier si le processus Myo existe
+            myo_process_exists = False
+            for process in psutil.process_iter(['pid', 'name']):
+                if "MyoApp" in process.info['name']:
+                    myo_process_exists = True
+                    pid = process.info['pid']
+                    break
+
+            if myo_process_exists:
+                # Arrêter le processus Myo
+                print(f"DEUS VULTTTTTTT")
+                os.kill(pid, signal.SIGINT)
+                print(f"LA de;ocratie a ete repamdue ")
+                
+                # Attendre que le processus se termine
+                for _ in range(5):  # Attendre jusqu'à 5 secondes
+                    if not psutil.pid_exists(pid):
+                        break
+                    time.sleep(1)
+                
+                # Si le processus n'est toujours pas terminé, le forcer
+                if psutil.pid_exists(pid):
+                    os.kill(pid, signal.SIGKILL)
+                
+                self.myo_process = None
+                self.configClass.set_status('MYO_Sensor', False)
+                st.success("Exécutable Myo arrêté avec succès.")
             for sensor_id, sensor_instance in self.sensor_instances.items():
                 if isinstance(sensor_instance, gek.GridEYEKit):
-                    try:
-                        sensor_instance.stop_recording()
-                        sensor_instance.close()
-                        self.configClass.set_status(sensor_id, "false")
-                    except Exception & gek.GridEYEError as e:
-                        st.error(f"Erreur lors de l'arrêt de {sensor_id}: {str(e)}")
-                        logging.error(f"Erreur lors de l'arrêt de {sensor_id}: {str(e)}")
-                if isinstance(sensor_instance, Myo.MyoSensor):
-                    try:
-                        sensor_instance.stop_myo_executable()
-                        self.configClass.set_status(sensor_id, "false")
-                    except Exception & Myo.MyoSensorException as e:
-                        st.error(f"Erreur lors de l'arrêt de {sensor_id}: {str(e)}")
-                        logging.error(f"Erreur lors de l'arrêt de {sensor_id}: {str(e)}")
+                    sensor_instance.stop_recording()
+                    sensor_instance.close()
+                    self.configClass.set_status(sensor_id, "false")
                 # if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
                 #     sensor_instance.stop_flag = True
                 #     self.configClass.set_status(sensor_id, "false")
@@ -262,7 +318,7 @@ class dARtToolkit:
         except Exception as e:
             st.error(f"An error occured while displaying the database module : {str(e)}")
             logging.error(f"Error in database module display: {str(e)}")
-            
+
     def run(self):
         try:
             self.setup_page()
@@ -283,5 +339,16 @@ class dARtToolkit:
             elif st.session_state.current_view == 'database':
                 self.database_view(st.session_state.selected_database)
         except Exception as e:
-            st.error(f"An unexpected error occured while running the page: {str(e)}")
+            st.error(f"An unexpected error occured whiler running the page: {str(e)}")
             logging.error(f"Error in run section: {str(e)}")
+
+if __name__ == "__main__":
+    try:
+        app = dARtToolkit()
+        app.run()
+    except dARtToolkitError as e:
+        st.error(f"Critical error: {str(e)}")
+        logging.critical(f"Critical error in main section: {str(e)}")
+    except Exception as e:
+        st.error(f"An unexpected critical error occured: {str(e)}")
+        logging.critical(f"An unexpected critical error occured: {str(e)}")
