@@ -5,7 +5,7 @@
             "values_string": "0b",
             "values": 0,
             "amount": 1,
-            "active": "true"
+            "active": "false"
         },
         {
             "device": "SEN55",
@@ -39,7 +39,7 @@
     "ports": [
         {
             "device": "MYO_Sensor",
-            "port": "COM3"
+            "port": "53:89:D1:03:96:F7"
         },
         {
             "device": "SEN55",

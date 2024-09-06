@@ -32,6 +32,10 @@ class dARtToolkit:
             self.configClass = Conf.Config()
             self.config = self.configClass.config
             self.sensor_instances = {}
+            
+            if 'sensor_instances' not in st.session_state:
+                st.session_state.sensor_instances = {}
+            
             self.DIRECTORY = self.config["directories"]["database"]
             self.PAGE_TITLE = "dARt Toolkit"
             self.CUSTOM_CSS = """
@@ -96,7 +100,7 @@ class dARtToolkit:
                             try:
                                 grideye = gek.GridEYEKit(port)
                                 if grideye.connect():
-                                    self.sensor_instances[sensor_id] = grideye
+                                    st.session_state.sensor_instances[sensor_id] = grideye
                                     grideye.start_recording()
                                     grideye.instance_id = i
                                     self.configClass.set_status(sensor, "true")
@@ -107,12 +111,14 @@ class dARtToolkit:
                                 st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         if sensor == "Myo_Sensor":
                             try:
-                                MyoSensor = Myo.MyoSensor()
+                                MyoSensor = Myo.MyoSensor(port)
                                 MyoSensor.launch_myo_executable()
                                 MyoSensor.instance_id = i
-                                self.sensor_instances[sensor_id] = MyoSensor
+                                # self.sensor_instances[sensor_id] = MyoSensor
+                                st.session_state.sensor_instances[sensor_id] = MyoSensor
                                 self.configClass.set_status(sensor, "true")
                                 st.success(f"{sensor_id} connecté et initialisé ✅")
+                                st.write(st.session_state.sensor_instances)
                             except Exception as e:
                                 st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                                 logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
@@ -120,7 +126,7 @@ class dARtToolkit:
                         # if sensor == "Connected_Wood_Plank":
                         #     try:
                         #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
-                        #         self.sensor_instances[sensor_id] = connected_wood_plank
+                        #         st.session_state.sensor_instances[sensor_id] = connected_wood_plank
                         #         connected_wood_plank.instance_id = i
                         #         self.configClass.set_status(sensor, "true")
                         #         connected_wood_plank.listen_for_sen55()
@@ -152,12 +158,15 @@ class dARtToolkit:
         session_holder.info("Arrêt de la session...")
         active_sensors = [device['device'] for device in self.config['devices'] if device['active']]
         
+         # Afficher les instances de capteurs avant l'arrêt
+        logging.info(f"Sensor instances before stopping the session: {st.session_state.sensor_instances}")
+        
         if not active_sensors: 
             session_holder.warning("No session is currently active.")
             return
         
         try:
-            for sensor_id, sensor_instance in self.sensor_instances.items():
+            for sensor_id, sensor_instance in st.session_state.sensor_instances.items():
                 if isinstance(sensor_instance, gek.GridEYEKit):
                     try:
                         sensor_instance.stop_recording()
@@ -176,9 +185,11 @@ class dARtToolkit:
                 # if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
                 #     sensor_instance.stop_flag = True
                 #     self.configClass.set_status(sensor_id, "false")
-            self.sensor_instances.clear()
+            #self.sensor_instances.clear()
+            st.session_state.sensor_instances.clear()
             time.sleep(2)
             session_holder.success("Session arrêtée ✅")
+            logging.info("Session stopped successfully", st.session_state.sensor_instances)
         except Exception as e:
             session_holder.error(f"Erreur lors de l'arrêt de la session: {str(e)}")
             logging.error(f"Erreur lors de l'arrêt de la session: {str(e)}")

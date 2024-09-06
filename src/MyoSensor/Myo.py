@@ -22,11 +22,13 @@ class MyoSensorException(Exception):
     pass
 
 class MyoSensor:
-    def __init__(self):
+    def __init__(self, port):
         try:
             
             self.ClassDeConfiguration = Conf.Config()
             self.config = self.ClassDeConfiguration.config
+            
+            self.port = port
             
             self.csv_dir = self.ClassDeConfiguration.config['directories']['csv']
             self.csv_path = Parent_path / self.csv_dir
@@ -56,8 +58,10 @@ class MyoSensor:
             print(f"Permissions executables : {os.access(executable_path, os.X_OK)}")
             print(f"Permissions ecriture repertoire : {os.access(os.path.dirname(self.csv_path),os.W_OK)}")
             
+            logging.info(f"Mac address : {self.port}")
+            
             # Lancer l'exécutable avec seulement le chemin du fichier CSV
-            self.myo_process = subprocess.Popen([executable_path, self.csv_path], preexec_fn=os.setsid)
+            self.myo_process = subprocess.Popen([executable_path, self.csv_path,self.port], preexec_fn=os.setsid)
             logging.info(f"Myo executable launched with PID: {self.myo_process.pid}")
             
             # Mettre à jour le statut du capteur dans la configuration
