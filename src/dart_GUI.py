@@ -33,6 +33,9 @@ class dARtToolkit:
             self.config = self.configClass.config
             self.sensor_instances = {}
             
+            if 'session_active' not in st.session_state:
+                st.session_state.session_active = False
+            
             if 'sensor_instances' not in st.session_state:
                 st.session_state.sensor_instances = {}
             
@@ -79,6 +82,10 @@ class dARtToolkit:
             raise dARtToolkitError(f"Error loading module: {module_name}")
 
     def activate_sensors(self, myo, env, temp, plates):
+        if st.session_state.session_active:
+            st.warning("Une session est déjà active. Veuillez arrêter la session avant d'en démarrer une nouvelle.")
+            return
+        
         session_holder = st.empty()
 
         if not any([myo, env, temp, plates]):
@@ -147,6 +154,8 @@ class dARtToolkit:
                         #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         else:
                             st.error(f"Capteur inconnu: {sensor}")
+            st.session_state.session_active = True
+            logging.info("Myo warning message : session is active")
         except Exception as e:
             st.error(f"Une erreur inattendue s'est produite: {str(e)}")
             logging.error(f"Une erreur inattendue s'est produite lors de l'initialisation des capteurs: {str(e)}")
@@ -154,6 +163,10 @@ class dARtToolkit:
         session_holder.empty()
 
     def stop_session(self):
+        if st.session_state.session_active == False:
+            st.warning("Aucune session n'est actuellement active.")
+            return
+        
         session_holder = st.empty()
         session_holder.info("Arrêt de la session...")
         active_sensors = [device['device'] for device in self.config['devices'] if device['active']]
@@ -188,6 +201,7 @@ class dARtToolkit:
             #self.sensor_instances.clear()
             st.session_state.sensor_instances.clear()
             time.sleep(2)
+            st.session_state.session_active = False
             session_holder.success("Session arrêtée ✅")
             logging.info("Session stopped successfully", st.session_state.sensor_instances)
         except Exception as e:
@@ -230,13 +244,13 @@ class dARtToolkit:
         with col1:
             myo = st.toggle("Myo", key="myo")
             temp = st.toggle("Grid-EYE", key="temp")
-            if st.button("Activer les paramètres sélectionnés"):
+            if st.button("Activer les paramètres sélectionnés", disabled=not not st.session_state.session_active):
                 self.activate_sensors(myo, st.session_state.env, temp, st.session_state.plates)
 
         with col2:
             env = st.toggle("Sen55", key="env")
             plates = st.toggle("Connected_Wood_Plank", key="plates")
-            if st.button("Arrêter la session"):
+            if st.button("Arrêter la session", disabled=not st.session_state.session_active):
                 self.stop_session()
 
         with st.container():
@@ -248,17 +262,27 @@ class dARtToolkit:
             for i, preset in enumerate([preset1, preset2, preset3, preset4], start=1):
                 with preset:
                     if st.button(f"Préréglage {i}"):
-                        if self.configClass.get_active_preset() == "default":
+                        current_preset = self.configClass.get_active_preset()
+                        if current_preset == f"preset{i}":
+                           
+                            try:
+                                self.configClass.set_active_preset("default")
+                                self.configClass.save_config()
+                                st.warning("Préréglage par défaut sélectionné ✅")
+                            except Exception as e:
+                                st.error(f"Erreur lors de la sélection du préréglage par défaut : {str(e)}")
+                                logging.error(f"Erreur de sélection du préréglage : {str(e)}")
+                        else:
+                           
                             try:
                                 self.configClass.set_active_preset(f"preset{i}")
                                 self.configClass.save_config()
                                 st.success(f"Préréglage {i} sélectionné ✅")
                             except Exception as e:
-                                st.error(f"Error while selecting preset configuration: {str(e)}")
-                                logging.error(f"Preset selection error: {str(e)}")
-                        else:
-                            self.configClass.set_active_preset("default")
-
+                                st.error(f"Erreur lors de la sélection du préréglage {i} : {str(e)}")
+                                logging.error(f"Erreur de sélection du préréglage : {str(e)}")
+                                
+                                
     def database_view(self, selected_database):
         try:
             module_path = os.path.join(str(Main_path), self.DIRECTORY, f"{selected_database}.py")

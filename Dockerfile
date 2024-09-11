@@ -57,5 +57,6 @@ EXPOSE 8501
 # Droit d'accès
 RUN chmod +x /usr/local/bin/python3.12
 
+
 # Commande pour exécuter l'application Streamlit
 CMD ["streamlit", "run", "src/main.py", "--server.address", "0.0.0.0"]
