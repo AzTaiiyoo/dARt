@@ -244,7 +244,7 @@ class dARtToolkit:
         with col1:
             myo = st.toggle("Myo", key="myo")
             temp = st.toggle("Grid-EYE", key="temp")
-            if st.button("Activer les paramètres sélectionnés", disabled=not not st.session_state.session_active):
+            if st.button("Activer les paramètres sélectionnés", disabled= st.session_state.session_active):
                 self.activate_sensors(myo, st.session_state.env, temp, st.session_state.plates)
 
         with col2:
