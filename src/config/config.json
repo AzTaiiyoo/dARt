@@ -1,10 +1,10 @@
 {
     "devices": [
         {
-            "device": "MYO_Sensor",
+            "device": "Myo_Sensor",
             "values_string": "0b",
             "values": 0,
-            "amount": 1,
+            "amount": 0,
             "active": "false"
         },
         {
@@ -18,14 +18,14 @@
             "device": "Grideye",
             "values_string": "0b",
             "values": 0,
-            "amount": 0,
+            "amount": 1,
             "active": false
         },
         {
             "device": "Connected_Wood_Plank",
             "values_string": "19b",
             "values": 19,
-            "amount": 3,
+            "amount": 1,
             "active": false
         },
         {
@@ -38,7 +38,7 @@
     ],
     "ports": [
         {
-            "device": "MYO_Sensor",
+            "device": "Myo_Sensor",
             "port": "53:89:D1:03:96:F7"
         },
         {
@@ -101,6 +101,6 @@
         }
     ],
     "active_preset": {
-        "value": "preset2"
+        "value": "default"
     }
 }

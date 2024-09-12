@@ -1,7 +1,9 @@
 import json
 import os
 from pathlib import Path
+import logging
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 directory = Path(__file__).parent.resolve()
 
 class Config:
@@ -21,7 +23,64 @@ class Config:
         """
         self.config_path = os.path.join(directory, 'config.json')
         self.config = self.load_config()
-
+        
+    def correct_config(self):
+        self.set_grideye_myo_amount_to_one()
+        self.reset_sensor_amount()
+        self.save_config()
+    
+    def set_grideye_myo_amount_to_one(self):
+        """
+        @brief Sets the amount of grideye and myo sensors to one if greater than one.
+        @return bool True if any amount was changed and the config file was saved, False otherwise.
+        """
+        try:
+            changed = False
+            for device in self.config['devices']:
+                if device['device'].lower() == "Myo_Sensor" or "Grideye":
+                    if device['amount'] > 1:
+                        device['amount'] = 1
+                        changed = True
+            if changed:
+                self.save_config()
+            return changed
+        except Exception as e:
+            logging.error(f"Error while setting the amount of grideye and myo sensors to one: {e}")
+            return False
+        
+    def reset_sensor_amount(self):
+        """
+        @brief Réinitialise le nombre de capteurs de tous les appareils si négatif.
+        @return bool True si au moins un appareil a été réinitialisé, False sinon.
+        """
+        try:
+            reset_occurred = False
+            for device in self.config['devices']:
+                if device['amount'] < 0:
+                    device['amount'] = 0
+                    reset_occurred = True
+            
+            if reset_occurred:
+                self.save_config()
+            
+            return reset_occurred
+        except Exception as e:
+            logging.error(f"Error while resetting the amount of sensors: {e}")
+            return False
+                
+    def get_devices(self):
+        """
+        @brief Retrieves the list of devices from the configuration.
+        @return A list of devices.
+        @details This function iterates over the 'devices' section of the configuration and retrieves the 'device' value for each entry. The list of devices is then returned.
+        @note Make sure that the 'config' attribute is properly initialized before calling this function.
+        """
+        
+        devices = []
+        for device in self.config['devices']:
+            devices.append(device['device'])
+            return devices
+            
     def load_config(self):
         """
         @brief Charge la configuration depuis le fichier JSON.
