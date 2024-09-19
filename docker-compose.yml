@@ -13,4 +13,5 @@ services:
     build: .
     volumes:
       - .:/app
-    command: python3 src/test.py
+    command: ["/opt/venv/bin/python", "src/test.py"]
+    privileged: true

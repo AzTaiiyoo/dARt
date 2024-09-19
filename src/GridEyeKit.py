@@ -1,17 +1,15 @@
-"""
-@file GridEyeKit.py
-@brief Module for interacting with the Grid-EYE sensor.
-
-This module manages the connection, reading, and recording of data
-from the Grid-EYE thermal sensor.
-
-@author [Your Name]
-@date [Current Date]
-@version 2.4
-"""
+import sys
+#print("Python version:", sys.version)
+#print("Python path:", sys.path)
 
 import serial
-import sys
+#print("Serial version:", serial.__version__)
+#print("Serial path:", serial.__file__)
+#print("Serial contents:", dir(serial))
+
+from serial import Serial, SerialException
+
+# Le reste des imports
 import struct
 import numpy as np
 import threading
@@ -65,7 +63,7 @@ class GridEYEKit:
         self.csv_path = os.path.join(Main_path,self.csv_directory, self.csv_filename)
 
         try:
-            self.ser = serial.Serial(
+            self.ser = Serial(
                 port=self.port,
                 baudrate=9600,
                 timeout=0.5,

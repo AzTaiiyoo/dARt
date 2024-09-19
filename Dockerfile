@@ -24,13 +24,14 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     libcap2-bin \
     python3-tk \
+    tk-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Télécharger et installer Python 3.12.4
 RUN wget https://www.python.org/ftp/python/3.12.4/Python-3.12.4.tgz && \
     tar -xf Python-3.12.4.tgz && \
     cd Python-3.12.4 && \
-    ./configure --enable-optimizations && \
+    ./configure --enable-optimizations --with-tcltk-includes='-I/usr/include/tcl8.6' --with-tcltk-libs='/usr/lib/x86_64-linux-gnu/libtcl8.6.so /usr/lib/x86_64-linux-gnu/libtk8.6.so' && \
     make -j $(nproc) && \
     make altinstall && \
     cd .. && rm -rf Python-3.12.4 Python-3.12.4.tgz
@@ -45,18 +46,21 @@ WORKDIR /app
 # Copier les fichiers du projet
 COPY requirements.txt .
 
-# Installer les dépendances du projet et Streamlit
+# Créer et activer l'environnement virtuel
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Installer les dépendances du projet et Streamlit dans l'environnement virtuel
 RUN pip install --no-cache-dir -r requirements.txt streamlit
 
 # Ajouter les permissions nécessaires pour bluepy
-RUN setcap 'cap_net_raw,cap_net_admin+eip' $(readlink -f $(which python))
+RUN setcap 'cap_net_raw,cap_net_admin+eip' /usr/local/bin/python3.12
 
 # Exposer le port utilisé par Streamlit (par défaut 8501)
 EXPOSE 8501
 
 # Droit d'accès
-RUN chmod +x /usr/local/bin/python3.12
+RUN chmod -R 755 /opt/venv
 
-
-# Commande pour exécuter l'application Streamlit
-CMD ["streamlit", "run", "src/main.py", "--server.address", "0.0.0.0"]
+# Commande pour exécuter l'application Streamlit dans l'environnement virtuel
+CMD ["/opt/venv/bin/python", "-m", "streamlit", "run", "src/main.py", "--server.address", "0.0.0.0"]
