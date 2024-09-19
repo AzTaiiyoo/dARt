@@ -32,18 +32,17 @@ class dARtToolkit:
             self.configClass = Conf.Config()
             self.config = self.configClass.config
             self.sensor_instances = {}
-            
+
             if 'session_active' not in st.session_state:
                 st.session_state.session_active = False
-            
+
             if 'sensor_instances' not in st.session_state:
                 st.session_state.sensor_instances = {}
-            
+
             self.DIRECTORY = self.config["directories"]["database"]
             self.PAGE_TITLE = "dARt Toolkit"
             self.CUSTOM_CSS = """
             <style>
-            .stSidebar .stSuccess {
                 padding: 0.5rem 1rem;
             }
             .custom-divider {
@@ -58,12 +57,26 @@ class dARtToolkit:
                 padding: 10px;
                 background-color: white;
             }
+
+            h1 {
+                color: black;
+                margin-bottom: 1.4rem;
+            }
+
+            .stButton>button {
+                background-color: white;
+                color : black;
+                border-radius: 10px;
+                border: 1px solid blue;
+                padding: 0.5rem 1rem;
+                transition: all 0.3s;
+                }
             </style>
             """
         except Exception as e:
             logging.error(f"Error initializing dARtToolkit: {str(e)}")
             raise dARtToolkitError("Init Error")
-        
+
     def list_database_files(self):
         try:
             return [f[:-3] for f in os.listdir(os.path.join(Main_path, self.DIRECTORY)) if f.endswith('_database.py')]
@@ -85,19 +98,19 @@ class dARtToolkit:
         if st.session_state.session_active:
             st.warning("A session is already active. Stop the current session before starting a new one.")
             return
-        
+
         session_holder = st.empty()
 
         if not any([myo, env, temp, plates]):
             session_holder.warning("Please, select at least one sensor.")
             return
-        
+
         # Warning message in case of multiple instances of the same sensor or negative sensor amount
         for sensor in ["Myo_Sensor", "Grideye"]:
             if self.configClass.get_sensor_amount(sensor) > 1 :
                 session_holder.warning(f"Multiple instances of {sensor} are not supported. Please modify config.json file.")
                 return
-            
+
         for sensor in ["Myo_Sensor", "Grideye", "SEN55", "Connected_Wood_Plank"]:
             if self.configClass.get_sensor_amount(sensor) < 0 :
                 session_holder.warning(f"Please, set the number of {sensor} to 0, 1 or more in the config.json file.")
@@ -105,14 +118,17 @@ class dARtToolkit:
 
         session_holder.info("Initializing sensors...")
         time.sleep(2)
-        
+
+        error_occurred = False
+        activated_sensors = []
+
         try:
             for sensor, is_active in [("Myo_Sensor", myo), ("SEN55", env), ("Grideye", temp),
-                                      ("Connected_Wood_Plank", plates)]:
+                                    ("Connected_Wood_Plank", plates)]:
                 if is_active:
-                    sensor_count = self.configClass.get_sensor_amount(sensor) if sensor != ("Myo_Sensor","Grideye")  or self.configClass.get_sensor_amount(sensor) <=0 else 1
+                    sensor_count = self.configClass.get_sensor_amount(sensor) if sensor not in ("Myo_Sensor", "Grideye") or self.configClass.get_sensor_amount(sensor) <= 0 else 1
                     for i in range(1, sensor_count + 1):
-                        sensor_id = f"{sensor}_{i}" if i > 1 else sensor 
+                        sensor_id = f"{sensor}_{i}" if i > 1 else sensor
                         port = self.configClass.get_device_port(sensor_id)
                         if sensor == "Grideye":
                             try:
@@ -122,25 +138,25 @@ class dARtToolkit:
                                     grideye.start_recording()
                                     grideye.instance_id = i
                                     self.configClass.set_status(sensor, "true")
+                                    activated_sensors.append(sensor_id)
                                     st.success(f"{sensor_id} initialized & connected ✅")
                                 else:
-                                    st.error(f"Error while initializing {sensor_id}. Please verify the connection.")
-                            except gek.GridEYEError as e:
+                                    raise Exception(f"Error while initializing {sensor_id}. Please verify the connection.")
+                            except (gek.GridEYEError, Exception) as e:
                                 st.error(f"Error while initializing {sensor_id}: {str(e)}")
-                        if sensor == "Myo_Sensor":
+                                error_occurred = True
+                                break
+                        elif sensor == "Myo_Sensor":
                             try:
                                 MyoSensor = Myo.MyoSensor(port)
                                 MyoSensor.launch_myo_executable()
                                 MyoSensor.instance_id = i
                                 st.session_state.sensor_instances[sensor_id] = MyoSensor
                                 self.configClass.set_status(sensor, "true")
+                                activated_sensors.append(sensor_id)
                                 st.success(f"{sensor_id} connecté et initialisé ✅")
                                 st.write(st.session_state.sensor_instances)
-                            except Exception as e:
-                                st.error(f"Error while initializing {sensor_id}: {str(e)}")
-                                logging.error(f"Error while initializing {sensor_id}: {str(e)}")
-                            
-                        # if sensor == "Connected_Wood_Plank":
+                         # if sensor == "Connected_Wood_Plank":
                         #     try:
                         #         connected_wood_plank = cbd.ConnectedBluetoothDevice()
                         #         st.session_state.sensor_instances[sensor_id] = connected_wood_plank
@@ -162,30 +178,63 @@ class dARtToolkit:
                         #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
                         #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+
+                            except Exception as e:
+                                st.error(f"Error while initializing {sensor_id}: {str(e)}")
+                                logging.error(f"Error while initializing {sensor_id}: {str(e)}")
+                                error_occurred = True
+                                break
                         else:
                             st.error(f"Unknown sensor : {sensor}")
+                            error_occurred = True
+                            break
+                if error_occurred:
+                    break
+
+            if error_occurred:
+                raise Exception("An error occurred during sensor activation")
+
             st.session_state.session_active = True
-            logging.info("Myo warning message : session is active")
+            logging.info("Session is active")
         except Exception as e:
-            st.error(f"An unexpected error occured: {str(e)}")
-            logging.error(f"An unexpected error occured while initializing sensors : {str(e)}")
+            st.error(f"An unexpected error occurred: {str(e)}")
+            logging.error(f"An unexpected error occurred while initializing sensors: {str(e)}")
+            error_occurred = True
+
+        if error_occurred:
+            # Deactivate all sensors that were activated
+            for sensor_id in activated_sensors:
+                try:
+                    sensor_instance = st.session_state.sensor_instances.pop(sensor_id, None)
+                    if isinstance(sensor_instance, gek.GridEYEKit):
+                        sensor_instance.stop_recording()
+                        sensor_instance.close()
+                    elif isinstance(sensor_instance, Myo.MyoSensor):
+                        sensor_instance.stop_myo_executable()
+                    self.configClass.set_status(sensor_id.split('_')[0], "false")
+                except Exception as deactivation_error:
+                    logging.error(f"Error deactivating {sensor_id}: {str(deactivation_error)}")
+
+            st.session_state.session_active = False
+            session_holder.error("Sensor activation cancelled due to errors.")
+            return
 
         session_holder.empty()
 
-    def stop_session(self):   
+    def stop_session(self):
         active_sensors = [device['device'] for device in self.config['devices'] if device['active']]
         session_holder = st.empty()
-        
-        if not active_sensors or st.session_state.session_active == False: 
+
+        if not active_sensors or st.session_state.session_active == False:
             session_holder.warning("No session is currently active.")
             return
-        
+
         session_holder.info("Stopping session...")
-        
-        
+
+
          # Afficher les instances de capteurs avant l'arrêt
         logging.info(f"Sensor instances before stopping the session: {st.session_state.sensor_instances}")
-        
+
         try:
             for sensor_id, sensor_instance in st.session_state.sensor_instances.items():
                 if isinstance(sensor_instance, gek.GridEYEKit):
@@ -272,7 +321,7 @@ class dARtToolkit:
                     if st.button(f"Preset {i}"):
                         current_preset = self.configClass.get_active_preset()
                         if current_preset == f"preset{i}":
-                           
+
                             try:
                                 self.configClass.set_active_preset("default")
                                 self.configClass.save_config()
@@ -281,7 +330,7 @@ class dARtToolkit:
                                 st.error(f"Error while selecting default preset : {str(e)}")
                                 logging.error(f"Error while selecting default preset : {str(e)}")
                         else:
-                           
+
                             try:
                                 self.configClass.set_active_preset(f"preset{i}")
                                 self.configClass.save_config()
@@ -289,8 +338,8 @@ class dARtToolkit:
                             except Exception as e:
                                 st.error(f"Error while selecting Preset {i} : {str(e)}")
                                 logging.error(f"Error while selecting preset {i}: {str(e)}")
-                                
-                                
+
+
     def database_view(self, selected_database):
         try:
             module_path = os.path.join(str(Main_path), self.DIRECTORY, f"{selected_database}.py")
@@ -305,7 +354,7 @@ class dARtToolkit:
         except Exception as e:
             st.error(f"An error occured while displaying the database module : {str(e)}")
             logging.error(f"Error in database module display: {str(e)}")
-            
+
     def run(self):
         try:
             self.configClass.correct_config()

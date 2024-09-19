@@ -88,7 +88,7 @@ class GridEYE_Viewer():
         self.MINTEMP.set(27)
         self.MINTEMP.pack()
         
-        self.kit = GridEYEKit(self.ConfigClass.get_device_port('GridEye'))
+        self.kit = GridEYEKit(self.ConfigClass.get_device_port('Grideye'))
                  
     def exitwindow(self):
         """ if windwow is clsoed, serial connection has to be closed!"""

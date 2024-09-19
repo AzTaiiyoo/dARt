@@ -1,106 +1,106 @@
 {
-    "devices": [
-        {
-            "device": "Myo_Sensor",
-            "values_string": "0b",
-            "values": 0,
-            "amount": 0,
-            "active": "false"
-        },
-        {
-            "device": "SEN55",
-            "values_string": "16b",
-            "values": 16,
-            "amount": 0,
-            "active": false
-        },
-        {
-            "device": "Grideye",
-            "values_string": "0b",
-            "values": 0,
-            "amount": 1,
-            "active": false
-        },
-        {
-            "device": "Connected_Wood_Plank",
-            "values_string": "19b",
-            "values": 19,
-            "amount": 1,
-            "active": false
-        },
-        {
-            "device": "MetaWear",
-            "values_string": "0b",
-            "values": 0,
-            "amount": 0,
-            "active": false
-        }
-    ],
-    "ports": [
-        {
-            "device": "Myo_Sensor",
-            "port": "53:89:D1:03:96:F7"
-        },
-        {
-            "device": "SEN55",
-            "port": "COM5"
-        },
-        {
-            "device": "Grideye",
-            "port": "/dev/tty.usbmodem11101"
-        },
-        {
-            "device": "Connected_Wood_Plank",
-            "port": "COM6"
-        }
-    ],
-    "directories": {
-        "database": "database_pages",
-        "csv": "csv_files_data",
-        "logs": "logs",
-        "config": "config.json",
-        "myo": "MyoSensor"
+  "devices": [
+    {
+      "device": "Myo_Sensor",
+      "values_string": "0b",
+      "values": 0,
+      "amount": 0,
+      "active": "false"
     },
-    "filenames": {
-        "Grideye": "Grideye_data.csv",
-        "SEN55": "SEN55_data.csv",
-        "CWP_SG": "CWP_SG_data.csv",
-        "CWP_Capa": "CWP_Capa_data.csv",
-        "CWP_Piezos": "CWP_Piezos_data.csv"
+    {
+      "device": "SEN55",
+      "values_string": "16b",
+      "values": 16,
+      "amount": 0,
+      "active": false
     },
-    "presets": [
-        {
-            "name": "default",
-            "Grideye_speed": "2",
-            "CWP_speed": "2",
-            "SEN55_speed": "2"
-        },
-        {
-            "name": "preset1",
-            "Grideye_speed": 1,
-            "CWP_speed": "1",
-            "SEN55_speed": "1"
-        },
-        {
-            "name": "preset2",
-            "Grideye_speed": 3,
-            "CWP_speed": "3",
-            "SEN55_speed": "3"
-        },
-        {
-            "name": "preset3",
-            "Grideye_speed": 4,
-            "CWP_speed": "4",
-            "SEN55_speed": "4"
-        },
-        {
-            "name": "preset4",
-            "Grideye_speed": 1,
-            "CWP_speed": "2",
-            "SEN55_speed": "3"
-        }
-    ],
-    "active_preset": {
-        "value": "default"
+    {
+      "device": "Grideye",
+      "values_string": "0b",
+      "values": 0,
+      "amount": 1,
+      "active": false
+    },
+    {
+      "device": "Connected_Wood_Plank",
+      "values_string": "19b",
+      "values": 19,
+      "amount": 1,
+      "active": false
+    },
+    {
+      "device": "MetaWear",
+      "values_string": "0b",
+      "values": 0,
+      "amount": 0,
+      "active": false
     }
+  ],
+  "ports": [
+    {
+      "device": "Myo_Sensor",
+      "port": "53:89:D1:03:96:F7"
+    },
+    {
+      "device": "SEN55",
+      "port": "COM5"
+    },
+    {
+      "device": "Grideye",
+      "port": "/dev/tty.usbmodem11101"
+    },
+    {
+      "device": "Connected_Wood_Plank",
+      "port": "COM6"
+    }
+  ],
+  "directories": {
+    "database": "database_pages",
+    "csv": "csv_files_data",
+    "logs": "logs",
+    "config": "config.json",
+    "myo": "MyoSensor"
+  },
+  "filenames": {
+    "Grideye": "Grideye_data.csv",
+    "SEN55": "SEN55_data.csv",
+    "CWP_SG": "CWP_SG_data.csv",
+    "CWP_Capa": "CWP_Capa_data.csv",
+    "CWP_Piezos": "CWP_Piezos_data.csv"
+  },
+  "presets": [
+    {
+      "name": "default",
+      "Grideye_speed": "2",
+      "CWP_speed": "2",
+      "SEN55_speed": "2"
+    },
+    {
+      "name": "preset1",
+      "Grideye_speed": 1,
+      "CWP_speed": "1",
+      "SEN55_speed": "1"
+    },
+    {
+      "name": "preset2",
+      "Grideye_speed": 3,
+      "CWP_speed": "3",
+      "SEN55_speed": "3"
+    },
+    {
+      "name": "preset3",
+      "Grideye_speed": 4,
+      "CWP_speed": "4",
+      "SEN55_speed": "4"
+    },
+    {
+      "name": "preset4",
+      "Grideye_speed": 1,
+      "CWP_speed": "2",
+      "SEN55_speed": "3"
+    }
+  ],
+  "active_preset": {
+    "value": "default"
+  }
 }
