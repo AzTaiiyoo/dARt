@@ -207,8 +207,10 @@ class dARtToolkit:
                 try:
                     sensor_instance = st.session_state.sensor_instances.pop(sensor_id, None)
                     if isinstance(sensor_instance, gek.GridEYEKit):
+                        # sensor_instance.stop_recording()
+                        # sensor_instance.close()
                         sensor_instance.stop_recording()
-                        sensor_instance.close()
+                        self.configClass.set_status(sensor_id, "false")
                     elif isinstance(sensor_instance, Myo.MyoSensor):
                         sensor_instance.stop_myo_executable()
                     self.configClass.set_status(sensor_id.split('_')[0], "false")
@@ -239,8 +241,9 @@ class dARtToolkit:
             for sensor_id, sensor_instance in st.session_state.sensor_instances.items():
                 if isinstance(sensor_instance, gek.GridEYEKit):
                     try:
+                        # sensor_instance.stop_recording()
+                        # sensor_instance.close()
                         sensor_instance.stop_recording()
-                        sensor_instance.close()
                         self.configClass.set_status(sensor_id, "false")
                     except Exception & gek.GridEYEError as e:
                         st.error(f"Error while stopping {sensor_id}: {str(e)}")
@@ -307,7 +310,7 @@ class dARtToolkit:
         with col2:
             env = st.toggle("Sen55", key="env")
             plates = st.toggle("Connected_Wood_Plank", key="plates")
-            if st.button("Stop session", disabled=not st.session_state.session_active):
+            if st.button("Stop session", disabled= not st.session_state.session_active):
                 self.stop_session()
 
         with st.container():
