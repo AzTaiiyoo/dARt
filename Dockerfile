@@ -53,6 +53,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Installer les dépendances du projet et Streamlit dans l'environnement virtuel
 RUN pip install --no-cache-dir -r requirements.txt streamlit
 
+RUN pip uninstall -y serial && \
+    pip uninstall -y pyserial && \
+    pip install pyserial
+
+
 # Ajouter les permissions nécessaires pour bluepy
 RUN setcap 'cap_net_raw,cap_net_admin+eip' /usr/local/bin/python3.12
 

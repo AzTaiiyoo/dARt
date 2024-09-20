@@ -57,6 +57,7 @@ class GridEYEKit:
         
         self.is_connected = False
         self.connection_error = False
+        self.last_successful_read = time.time()
 
         self.data_thread = None
         self.stop_thread = threading.Event()
@@ -96,28 +97,30 @@ class GridEYEKit:
         except (serial.SerialException, Exception) as e:
             self.connection_error = True
             logging.error(f"Error disconnecting from port {self.port}: {e}") if SerialException else logging.error(f"Error disconnecting: {e}")
+            return False
 
     def check_connection(self):
         if not self.ser or not self.ser.is_open:
-            self.is_connected = False
             self.connection_error = True
+            logging.error("Serial port is not open")
             return False  
         
         if time.time() - self.last_successful_read > 5:
-            self.is_connected = False
             self.connection_error = True
+            logging.error("No data received for 5 seconds")
             return False  
         
         return True
 
     def get_data(self):
-        if not self.ser or not self.ser.is_open or self.connection_error:
-            self.disconnect()
-            return Error("Serial port is not open, or device is not connected")
+        if not self.check_connection():
+            return None
         
         try:
             data = self.serial_readline()
             if len(data) >= 135:
+                self.last_successful_read = time.time()
+                self.connection_error = False
                 thermistor, tarr = self._process_data(data)
                 return {
                     'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -192,20 +195,21 @@ class GridEYEKit:
         logging.info("Stopped recording GridEYE data")
 
     def update_data(self):
-        while not self.stop_thread.is_set():
-            data= self.get_data()
-            if data:
-                self.data_records.append(data)
-            sleep(0.1)
+        while not self.stop_thread.is_set() and self.is_recording:
+            if not self.check_connection():
+                time.sleep(1)  
+                continue
+
+            try:
+                data = self.get_data()
+                if data:
+                    self.data_records.append(data)
+                time.sleep(0.1)  
+            except Exception as e:
+                logging.error(f"Error collecting data: {e}")
+                self.connection_error = True
+                time.sleep(1)  
             
-        # def update_data(self):
-    #     if self.is_recording:
-    #         data = self.get_data()
-    #         if data:
-    #             self.data_records.append(data)
-    #             return True
-    #     return False
-    
     def send_data_to_csv(self):
         if not self.data_records:
             logging.warning("No data to save")

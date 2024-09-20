@@ -47,7 +47,7 @@
         },
         {
             "device": "Grideye",
-            "port": "/dev/tty.usbmodem11101"
+            "port": "/dev/tty.usbmodem11401"
         },
         {
             "device": "Connected_Wood_Plank",

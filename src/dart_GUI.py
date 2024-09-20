@@ -263,7 +263,8 @@ class dARtToolkit:
             time.sleep(2)
             st.session_state.session_active = False
             session_holder.success("Session stopped ✅")
-            logging.info("Session stopped successfully", st.session_state.sensor_instances)
+            logging.info("Session stopped successfully")
+            logging.info("Sensor instances: %s", str(st.session_state.sensor_instances))
         except Exception as e:
             session_holder.error(f"An error occured while stopping the session: {str(e)}")
             logging.error(f"An error occured while stopping the session: {str(e)}")
