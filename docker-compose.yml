@@ -1,17 +1,24 @@
 services:
-  dart-app:
-    build: .
-    image: dart-streamlit
+  python-app:
+    image: debian:bullseye-slim
     ports:
       - "8501:8501"
     volumes:
       - .:/app
+    working_dir: /app
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
     privileged: true
-    command: streamlit run src/main.py --server.address 0.0.0.0
-
-  test:
-    build: .
-    volumes:
-      - .:/app
-    command: ["/opt/venv/bin/python", "src/test.py"]
-    privileged: true
+    command: >
+      bash -c "
+      apt-get update && 
+      apt-get install -y python3-full python3-venv python3-dev build-essential libglib2.0-dev libbluetooth-dev libcap2-bin &&
+      rm -rf /var/lib/apt/lists/* &&
+      python3 -m venv /opt/venv &&
+      . /opt/venv/bin/activate &&
+      pip install --no-cache-dir -r requirements.txt &&
+      pip uninstall -y serial pyserial &&
+      pip install pyserial &&
+      setcap 'cap_net_raw,cap_net_admin+eip' $$(readlink -f $$(which python3)) &&
+      python -m streamlit run src/main.py --server.address 0.0.0.0
+      "
