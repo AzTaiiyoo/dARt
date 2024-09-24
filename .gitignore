@@ -2,3 +2,5 @@
 .DS_Store
 __pycache__
 .vscode
+src/.DS_Store
+/dependencies
