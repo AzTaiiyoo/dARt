@@ -17,6 +17,7 @@ import GridEyeKit as gek
 import logging
 from pathlib import Path
 import MyoSensor.Myo as Myo
+import ConnectedBluetoothDevice as cbd
 
 # Configuration du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -146,6 +147,18 @@ class dARtToolkit:
                                 st.error(f"Error while initializing {sensor_id}: {str(e)}")
                                 error_occurred = True
                                 break
+                        if sensor == "SEN55":
+                            try:
+                                sen55 =cbd.ConnectedBluetoothDevice()
+                                self.sensor_instances[sensor_id] = sen55
+                                self.configClass.set_status(sensor, "true")
+                                sen55.instance_id = i
+                                sen55.listen_for_sen55()
+                                logging.info("Je bug là")
+                                st.success(f"{sensor_id} connecté et initialisé ✅")
+                            except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
+                                st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+                                logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         elif sensor == "Myo_Sensor":
                             try:
                                 MyoSensor = Myo.MyoSensor(port)
@@ -167,18 +180,6 @@ class dARtToolkit:
                         #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
                         #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
                         #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        # if sensor == "SEN55":
-                        #     try:
-                        #         sen55 =cbd.ConnectedBluetoothDevice()
-                        #         self.sensor_instances[sensor_id] = sen55
-                        #         self.configClass.set_status(sensor, "true")
-                        #         sen55.instance_id = i
-                        #         sen55.listen_for_sen55()
-                        #         st.success(f"{sensor_id} connecté et initialisé ✅")
-                        #     except (cbd.BTLEException, cbd.ConnectedBluetoothDeviceError) as e:
-                        #         st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-                        #         logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
-
                             except Exception as e:
                                 st.error(f"Error while initializing {sensor_id}: {str(e)}")
                                 logging.error(f"Error while initializing {sensor_id}: {str(e)}")
@@ -210,6 +211,9 @@ class dARtToolkit:
                         # sensor_instance.stop_recording()
                         # sensor_instance.close()
                         sensor_instance.stop_recording()
+                        self.configClass.set_status(sensor_id, "false")
+                    if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
+                        sensor_instance.stop_flag == True
                         self.configClass.set_status(sensor_id, "false")
                     elif isinstance(sensor_instance, Myo.MyoSensor):
                         sensor_instance.stop_myo_executable()
@@ -248,6 +252,9 @@ class dARtToolkit:
                     except Exception & gek.GridEYEError as e:
                         st.error(f"Error while stopping {sensor_id}: {str(e)}")
                         logging.error(f"Error while stopping {sensor_id}: {str(e)}")
+                if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
+                    sensor_instance.stop_flag == True
+                    self.configClass.set_status(sensor_id, "false")
                 if isinstance(sensor_instance, Myo.MyoSensor):
                     try:
                         sensor_instance.stop_myo_executable()

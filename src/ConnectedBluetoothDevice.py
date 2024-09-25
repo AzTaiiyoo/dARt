@@ -99,8 +99,13 @@ class ConnectedBluetoothDevice:
         @brief Listen for BLE advertisements from SEN55 and wood sensors.
         @exception ConnectedBluetoothDeviceError If device listening fails.
         """
+        if self.stop_flag :
+            logging.info("Flag déjà à true")
+            self.sen55_data_to_csv()
+            return
         try:
-            available_devices = {device['name']: device for device in self.config['devices']}
+            available_devices = {device['device']: device for device in self.config['devices']}
+            logging.info("Avant écoute...")
             scanner = Scanner().withDelegate(self.ScanDelegate())
             logging.info("Écoute des annonces BLE de SEN55 et wood...")
 

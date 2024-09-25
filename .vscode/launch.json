@@ -2,24 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
-        },
-        {
-            "name": "Python: Fichier actuel",
+            "name": "Python: Remote Attach (Streamlit)",
             "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
             },
-            "python": "${workspaceFolder}/dependencies/env_dARt/bin/python",
-            "cwd": "${workspaceFolder}"
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/app"
+                }
+            ],
+            "justMyCode": true
         }
     ]
 }
