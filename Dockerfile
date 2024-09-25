@@ -1,5 +1,5 @@
 # Utiliser une image de base légère compatible avec votre architecture
-FROM debian:bullseye-slim
+FROM --platform=linux/arm64 debian:bullseye-slim
 
 # Éviter les interactions lors de l'installation des paquets
 ENV DEBIAN_FRONTEND=noninteractive
@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     libbz2-dev \
     git \
+    g++ \
+    cmake \
     libbluetooth-dev \
     pkg-config \
     libglib2.0-dev \
@@ -53,9 +55,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Installer les dépendances du projet et Streamlit dans l'environnement virtuel
 RUN pip install --no-cache-dir -r requirements.txt streamlit
 
-RUN pip uninstall -y serial && \
+RUN pip install pyserial && \
+    pip uninstall -y serial && \
     pip uninstall -y pyserial && \
-    pip install pyserial
+    pip install pyserial && \
+    pip install debugpy
 
 
 # Ajouter les permissions nécessaires pour bluepy

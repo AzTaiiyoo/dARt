@@ -11,8 +11,8 @@
             "device": "SEN55",
             "values_string": "16b",
             "values": 16,
-            "amount": 0,
-            "active": false
+            "amount": 1,
+            "active": "true"
         },
         {
             "device": "Grideye",
