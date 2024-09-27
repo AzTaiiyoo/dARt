@@ -10,7 +10,8 @@ from BLE SEN55 and Connected_Wood_Plank sensors.
 @version 1.0
 """
 
-from bluepy.btle import Scanner, DefaultDelegate, BTLEException
+from bleak import BleakScanner
+import asyncio
 import struct
 import time
 import pandas as pd
@@ -69,79 +70,47 @@ class ConnectedBluetoothDevice:
         except Exception as e:
             logging.error(f"Erreur lors de l'initialisation: {str(e)}")
             raise ConnectedBluetoothDeviceError("Erreur d'initialisation")
-
-    class ScanDelegate(DefaultDelegate):
-        """
-        @class ScanDelegate
-        @brief Delegate class for handling Bluetooth device discovery events.
-        """
-
-        def __init__(self):
-            """
-            @brief Initialize the ScanDelegate object.
-            """
-            DefaultDelegate.__init__(self)
-
-        def handleDiscovery(self, dev, isNewDev, isNewData):
-            """
-            @brief Handle the discovery of Bluetooth devices.
-            @param dev The discovered device.
-            @param isNewDev True if the device is newly discovered.
-            @param isNewData True if new data is available for the device.
-            """
-            if isNewDev:
-                logging.info(f"Nouvel appareil découvert: {dev.addr}")
-            elif isNewData:
-                logging.info(f"Nouvelles données reçues de {dev.addr}")
-
-    def listen_for_sen55(self):
-        """
-        @brief Listen for BLE advertisements from SEN55 and wood sensors.
-        @exception ConnectedBluetoothDeviceError If device listening fails.
-        """
-        if self.stop_flag :
-            logging.info("Flag déjà à true")
+        
+    async def listen_for_sen55(self):
+        if self.stop_flag:
+            logging.info("Flag already set to true")
             self.sen55_data_to_csv()
             return
+
         try:
             available_devices = {device['device']: device for device in self.config['devices']}
-            logging.info("Avant écoute...")
-            scanner = Scanner().withDelegate(self.ScanDelegate())
-            logging.info("Écoute des annonces BLE de SEN55 et wood...")
+            logging.info("Starting to listen...")
 
-            start_time = time.time()
-            while time.time() - start_time < 20:
-                try:
-                    devices = scanner.scan(0.005)
-                    devices = [f for f in devices if len(f.getScanData()) >= 2]
-                    tab = [function for function in devices if (function.getScanData()[1][2] in available_devices.keys())]
-                    devices = [f for f in devices if len(f.getScanData()) == 3]
-                    tab += [function for function in devices if (function.getScanData()[2][2] in available_devices.keys())]
-
-                    for dev in tab:
-                        name_device = dev.getScanData()[-1][-1]
-                        if self.ConfigClass.get_status(name_device):
-                            manufacturer_data = dev.getValueText(255)
-                            if manufacturer_data:
-                                data = bytes.fromhex(manufacturer_data)
-                                logging.info(f"Données reçues de {name_device}")
-                                data_size = self.ConfigClass.get_values(name_device)
+            async def detection_callback(device, advertising_data):
+                if device.name in available_devices:
+                    if self.ConfigClass.get_status(device.name):
+                        manufacturer_data = advertising_data.manufacturer_data
+                        if manufacturer_data:
+                            for _, data in manufacturer_data.items():
+                                logging.info(f"Data received from {device.name}")
+                                data_size = self.ConfigClass.get_values(device.name)
                                 if len(data) >= data_size:
-                                    values = struct.unpack(self.ConfigClass.get_values_string(name_device), data[:self.ConfigClass.get_values(name_device)])
+                                    values = struct.unpack(self.ConfigClass.get_values_string(device.name), data[:data_size])
                                     logging.debug(', '.join(str(value) for value in values))
 
-                                    if name_device == "Connected_Wood_Plank":
+                                    if device.name == "Connected_Wood_Plank":
                                         self.CWP_data_to_array(values)
-                                    elif name_device == "SEN55":
+                                    elif device.name == "SEN55":
                                         self.SEN55_data_to_array(values)
-                except BTLEException as e:
-                    logging.error(f"Erreur Bluetooth: {str(e)}")
-                except struct.error as e:
-                    logging.error(f"Erreur de décodage des données: {str(e)}")
-        except Exception as e:
-            logging.error(f"Erreur lors de l'écoute des appareils: {str(e)}")
-            raise ConnectedBluetoothDeviceError("Erreur d'écoute des appareils")
 
+            scanner = BleakScanner(detection_callback=detection_callback)
+            await scanner.start()
+            await asyncio.sleep(20)  # Run for 20 seconds
+            await scanner.stop()
+
+        except Exception as e:
+            logging.error(f"Error while listening for devices: {str(e)}")
+            raise ConnectedBluetoothDeviceError("Error listening for devices")
+
+    # Méthode pour exécuter la fonction asynchrone
+    def run_listen_for_sen55(self):
+        asyncio.run(self.listen_for_sen55())
+    
     def SEN55_data_to_array(self, values):
         """
         @brief Process and store SEN55 sensor data.

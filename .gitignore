@@ -1,9 +1,5 @@
 .idea
-.DS_Store
-src/__pycache__
-src/MyoSensor/__pycache__
-src/database_pages/__pycache__
-src/config/__pycache__
+**.DS_Store
+**/__pychache__/
 .vscode
-src/.DS_Store
 /dependencies

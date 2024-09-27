@@ -202,7 +202,13 @@ class Config:
             self.save_config()
             print(f"Active preset set to '{preset_name}'")
 
-
+    def get_streaming_type(self):
+        return self.config['streaming_type']
+    
+    def set_streaming_type(self,type):
+        self.config['streaming_type'] = type
+        self.save_config()
+        
     def save_config(self):
         """
         @brief Sauvegarde la configuration dans le fichier JSON.
