@@ -5,35 +5,40 @@
       "values_string": "0b",
       "values": 0,
       "amount": 0,
-      "active": "false"
+      "active": "false",
+      "live": false
     },
     {
       "device": "SEN55",
       "values_string": "16b",
       "values": 16,
       "amount": 1,
-      "active": "true"
+      "active": "true",
+      "live": false
     },
     {
       "device": "Grideye",
       "values_string": "0b",
       "values": 0,
       "amount": 1,
-      "active": "false"
+      "active": "false",
+      "live": false
     },
     {
       "device": "Connected_Wood_Plank",
       "values_string": "19b",
       "values": 19,
       "amount": 1,
-      "active": false
+      "active": false,
+      "live": false
     },
     {
       "device": "MetaWear",
       "values_string": "0b",
       "values": 0,
       "amount": 0,
-      "active": false
+      "active": false,
+      "live": false
     }
   ],
   "ports": [
@@ -103,7 +108,15 @@
   "active_preset": {
     "value": "default"
   },
-  "live_data": {
-    "value": "false"
+  "live_stream": [
+    {
+      "live": false
+    }
+  ],
+  "Wifi_settings": {
+    "Broadcast_IP": "255.255.255.255",
+    "Port": 5005,
+    "Min_interval": 0.1,
+    "Max_interval": 5
   }
 }

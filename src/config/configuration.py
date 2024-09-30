@@ -202,13 +202,28 @@ class Config:
             self.save_config()
             print(f"Active preset set to '{preset_name}'")
 
-    def get_streaming_type(self):
-        return self.config['streaming_type']
+    def check_live_devices(self):
+        live_devices = []
+        try : 
+            for device in self.config['devices']:
+                live_devices.append(device['device']) if device['live'] else None
+            if live_devices.not_empty():
+                return live_devices, True
+        except Exception as e:
+            logging.error(f"Error while checking live devices: {e}")
+            return None, False
     
-    def set_streaming_type(self,type):
-        self.config['streaming_type'] = type
-        self.save_config()
-        
+    def get_wifi_configuration(self):
+        try:
+            wifi_conf = {"Broadcast_IP": self.config["Wifi_settings"]["Broadcast_IP"],
+                        "Port": self.config["Wifi_settings"]["Port"],
+                        "Min_interval": self.config["Wifi_settings"]["Min_interval"],
+                        "Max_interval": self.config["Wifi_settings"]["Max_interval"],}
+            return wifi_conf
+        except Exception as e:
+            logging.error(f"Error while retrieving the wifi configuration: {e}")
+            return None
+    
     def save_config(self):
         """
         @brief Sauvegarde la configuration dans le fichier JSON.

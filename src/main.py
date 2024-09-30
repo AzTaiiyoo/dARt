@@ -10,9 +10,17 @@ This module provides the entry point for the dARt Toolkit application.
 
 import streamlit as st
 from dart_GUI import dARtToolkit, dARtToolkitError
+import config.configuration as Conf
+import config.Wifi_transmitter as Wifi
 
 def main():
     try:
+        config = Conf.Config()
+        devices, live = config.check_live_devices()
+        
+        if live & devices.not_empty():
+            wifi_socket = Wifi.Wifi_transmitter()
+            
         app = dARtToolkit()
         app.run()
     except dARtToolkitError as e:
