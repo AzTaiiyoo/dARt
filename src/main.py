@@ -18,8 +18,9 @@ def main():
         config = Conf.Config()
         devices, live = config.check_live_devices()
         
-        if live & devices.not_empty():
-            wifi_socket = Wifi.Wifi_transmitter()
+        # if live or devices():
+        #     wifi_socket = Wifi.Wifi_transmitter()
+        #     wifi_socket.start()
             
         app = dARtToolkit()
         app.run()

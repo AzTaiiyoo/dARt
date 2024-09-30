@@ -52,7 +52,11 @@ class Wifi_transmitter:
             if self.sock:
                 self.sock.close()
             logging.info("Wifi transmitter stopped.")
-            
+         
+    def update(self, data):
+        self.latest_data = data
+        self.send_data(data)
+           
     def __del__(self):
         self.stop()
         

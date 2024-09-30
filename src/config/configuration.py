@@ -204,11 +204,14 @@ class Config:
 
     def check_live_devices(self):
         live_devices = []
-        try : 
+        try:
             for device in self.config['devices']:
-                live_devices.append(device['device']) if device['live'] else None
-            if live_devices.not_empty():
+                if device.get('live', False):
+                    live_devices.append(device['device'])
+            if live_devices:
                 return live_devices, True
+            else:
+                return None, False
         except Exception as e:
             logging.error(f"Error while checking live devices: {e}")
             return None, False
