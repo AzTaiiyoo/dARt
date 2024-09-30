@@ -40,10 +40,13 @@ class DataReadError(GridEYEError):
     pass
 
 class GridEYEKit:
-    def __init__(self, port):
+    def __init__(self, port, wifi_transmitter):
         self.port = port
+        self.wifi_transmitter = wifi_transmitter
+        
         self.configClass = Conf.Config()
         self.config = self.configClass.config
+        
         self.csv_directory = Main_path / self.config["directories"]["csv"]
         self.csv_filename = self.config["filenames"]["Grideye"]
         self.csv_path = self.csv_directory / self.csv_filename
@@ -137,6 +140,11 @@ class GridEYEKit:
         except struct.error as e:
             logging.error(f"Data decoding error: {e}")
             return None
+    
+    def get_latest_data(self):
+        if self.data_records:
+            return self.data_records[-1]
+        return None 
 
     def _process_data(self, data):
         tarr = np.zeros((8, 8))
@@ -204,6 +212,8 @@ class GridEYEKit:
                 data = self.get_data()
                 if data:
                     self.data_records.append(data)
+                    if self.wifi_transmitter:
+                        self.wifi_transmitter.update(self.get_latest_data())
                 time.sleep(0.1)  
             except Exception as e:
                 logging.error(f"Error collecting data: {e}")

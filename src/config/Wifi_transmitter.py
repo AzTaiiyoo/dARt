@@ -46,7 +46,7 @@ class Wifi_transmitter:
             logging.info("Wifi transmitter started.")
     
     def stop(self):
-        if self.running & self.thread:
+        if self.running & self.thread != None:
             self.running = False
             self.thread.join()
             if self.sock:

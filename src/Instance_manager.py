@@ -11,15 +11,17 @@ import ConnectedBluetoothDevice as cbd
 import streamlit as st
 
 class InstanceManager:
-    def __init__(self):
+    def __init__(self, wifi_transmitter):
         self.configClass = Conf.Config()
         self.config = self.configClass.config
+        
+        self.wifi_transmitter = wifi_transmitter
         
         if 'sensor_instances' not in st.session_state:
             st.session_state.sensor_instances = {}
         self.sensor_instances = st.session_state.sensor_instances
 
-    def initialize_devices(self, sensor, is_active, i):
+    def initialize_devices(self, sensor, is_active, i, wifi_transmitter):
         sensor_id = f"{sensor}_{i}" if i > 1 else sensor
         port = self.configClass.get_device_port(sensor_id)
 
@@ -37,7 +39,7 @@ class InstanceManager:
 
     def initialize_grideye(self, sensor_id, port, i):
         try:
-            grideye = gek.GridEYEKit(port)
+            grideye = gek.GridEYEKit(port, self.wifi_transmitter)
             if grideye.connect():
                 self.sensor_instances[sensor_id] = grideye
                 grideye.start_recording()

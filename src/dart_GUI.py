@@ -36,8 +36,13 @@ class dARtToolkit:
             self.configClass = Conf.Config()
             self.config = self.configClass.config
             
-            self.device_manager = InstanceManager()
-            # self.Wifi_transmitter = None 
+            live_devices, live = self.configClass.check_live_devices()
+            
+            self.wifi_transmitter = None
+            if live:
+                self.wifi_transmitter = Wifi_transmitter()
+                
+            self.device_manager = InstanceManager(self.wifi_transmitter)
 
             if 'session_active' not in st.session_state:
                 st.session_state.session_active = False
@@ -124,16 +129,18 @@ class dARtToolkit:
 
         session_holder = st.empty()
         session_holder.info("Initializing sensors...")
-        time.sleep(0.1)
 
         activated_sensors = []
         try:
+            if self.wifi_transmitter:
+                self.wifi_transmitter.start()
+                
             for sensor, is_active in [("Myo_Sensor", myo), ("SEN55", env), ("Grideye", temp),
                                       ("Connected_Wood_Plank", plates)]:
                 if is_active:
                     sensor_count = self.configClass.get_sensor_amount(sensor) if sensor not in ("Myo_Sensor", "Grideye") or self.configClass.get_sensor_amount(sensor) <= 0 else 1
                     for i in range(1, sensor_count + 1):
-                        success, sensor_id = self.device_manager.initialize_devices(sensor, is_active, i)
+                        success, sensor_id = self.device_manager.initialize_devices(sensor, is_active, i, self.wifi_transmitter)
                         if success and sensor_id:
                             activated_sensors.append(sensor_id)
                         else:
