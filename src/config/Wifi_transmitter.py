@@ -19,8 +19,12 @@ class Wifi_transmitter:
         self.init_wifi_config()
         self.init_socket()
         
+        self.latest_data = None
+        self.previous_data = None
+        
         self.running = False
         self.thread = None
+        
     
     def init_wifi_config(self):
         wifi_config = self.configClass.get_wifi_configuration()
@@ -46,22 +50,29 @@ class Wifi_transmitter:
             logging.info("Wifi transmitter started.")
     
     def stop(self):
-        if self.running & self.thread != None:
+        if self.running and self.thread is not None:
             self.running = False
             self.thread.join()
             if self.sock:
                 self.sock.close()
             logging.info("Wifi transmitter stopped.")
-         
+ 
     def update(self, data):
         self.latest_data = data
-        self.send_data(data)
+        self.send_data(self.latest_data)
            
     def __del__(self):
         self.stop()
         
     def run(self):
         while self.running:
-            data = self.collect_sensor_data()
-            self.send_data(data)
+            if self.latest_data != self.previous_data:
+                self.send_data(self.latest_data)
+                self.previous_data = self.latest_data
+            # data = self.collect_sensor_data()
+            # self.send_data(data)
             time.sleep(self.Min_interval)
+            
+if __name__ == "__main__":
+    wifi = Wifi_transmitter()
+    wifi.start()

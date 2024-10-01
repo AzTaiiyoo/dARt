@@ -33,7 +33,7 @@ class ConnectedBluetoothDevice:
     @class ConnectedBluetoothDevice
     @brief Main class for handling Bluetooth device connections and data collection.
     """
-    def __init__(self):
+    def __init__(self, wifi_transmitter):
         """
         @brief Initialize the ConnectedBluetoothDevice object.
         @exception ConnectedBluetoothDeviceError If initialization fails.
@@ -41,6 +41,7 @@ class ConnectedBluetoothDevice:
         try:
             self.ConfigClass = Conf.Config()
             self.config = self.ConfigClass.config
+            self.wifi_transmitter = wifi_transmitter
 
             self.instance_id = 1
 
@@ -71,6 +72,15 @@ class ConnectedBluetoothDevice:
             logging.error(f"Erreur lors de l'initialisation: {str(e)}")
             raise ConnectedBluetoothDeviceError("Erreur d'initialisation")
         
+    def get_latest_data(self):
+        latest_data = {
+            "SEN55": self.SEN55_data[-1] if self.SEN55_data else None,
+            "CWP_SG": self.CWP_SG_data[-1] if self.CWP_SG_data else None,
+            "CWP_Capa": self.CWP_Capa_data[-1] if self.CWP_Capa_data else None,
+            "CWP_Piezos": self.CWP_Piezos_data[-1] if self.CWP_Piezos_data else None
+        }
+        return latest_data
+        
     async def listen_for_sen55(self):
         if self.stop_flag:
             logging.info("Flag already set to true")
@@ -97,6 +107,10 @@ class ConnectedBluetoothDevice:
                                         self.CWP_data_to_array(values)
                                     elif device.name == "SEN55":
                                         self.SEN55_data_to_array(values)
+                                        
+                                    if self.wifi_transmitter:
+                                        latest_data = self.get_latest_data()
+                                        self.wifi_transmitter.update(latest_data)
 
             scanner = BleakScanner(detection_callback=detection_callback)
             await scanner.start()

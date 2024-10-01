@@ -55,7 +55,7 @@ class InstanceManager:
 
     def initialize_sen55(self, sensor_id, i):
         try:
-            sen55 = cbd.ConnectedBluetoothDevice()
+            sen55 = cbd.ConnectedBluetoothDevice(self.wifi_transmitter)
             self.sensor_instances[sensor_id] = sen55
             self.configClass.set_status("SEN55", "true")
             sen55.instance_id = i
@@ -83,7 +83,7 @@ class InstanceManager:
 
     def initialize_connected_wood_plank(self, sensor_id, i):
         try:
-            connected_wood_plank = cbd.ConnectedBluetoothDevice()
+            connected_wood_plank = cbd.ConnectedBluetoothDevice(self.wifi_transmitter)
             self.sensor_instances[sensor_id] = connected_wood_plank
             connected_wood_plank.instance_id = i
             self.configClass.set_status("Connected_Wood_Plank", "true")
