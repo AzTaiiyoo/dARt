@@ -2,20 +2,42 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Remote Attach (Streamlit)",
+            "name": "Python: Streamlit",
             "type": "python",
-            "request": "attach",
-            "connect": {
-                "host": "localhost",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "/app"
-                }
+            "request": "launch",
+            "program": "${workspaceFolder}/dependencies/env_dARt/bin/streamlit",
+            "args": [
+                "run",
+                "src/main.py"
             ],
-            "justMyCode": true
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "python": "${workspaceFolder}/dependencies/env_dARt/bin/python",
+            "console": "integratedTerminal"
         }
     ]
 }
+// Docker debug
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Python: Remote Attach (Streamlit)",
+//             "type": "python",
+//             "request": "attach",
+//             "connect": {
+//                 "host": "localhost",
+//                 "port": 5678
+//             },
+//             "pathMappings": [
+//                 {
+//                     "localRoot": "${workspaceFolder}",
+//                     "remoteRoot": "/app"
+//                 }
+//             ],
+//             "justMyCode": true
+//         }
+//     ]
+// }

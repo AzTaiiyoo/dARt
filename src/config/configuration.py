@@ -206,7 +206,7 @@ class Config:
         live_devices = []
         try:
             for device in self.config['devices']:
-                if device.get('live', False):
+                if device['live'] == True:
                     live_devices.append(device['device'])
             if live_devices:
                 return live_devices, True

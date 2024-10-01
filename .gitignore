@@ -3,3 +3,4 @@
 **/__pychache__/
 .vscode
 /dependencies
+src/csv_files_data/
