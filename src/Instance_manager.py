@@ -59,7 +59,7 @@ class InstanceManager:
             self.sensor_instances[sensor_id] = sen55
             self.configClass.set_status("SEN55", "true")
             sen55.instance_id = i
-            sen55.run_listen_for_sen55()
+            sen55.start_recording()
             st.success(f"{sensor_id} connecté et initialisé ✅")
             return True, sensor_id
         except Exception as e:
@@ -87,7 +87,7 @@ class InstanceManager:
             self.sensor_instances[sensor_id] = connected_wood_plank
             connected_wood_plank.instance_id = i
             self.configClass.set_status("Connected_Wood_Plank", "true")
-            connected_wood_plank.run_listen_for_sen55()
+            connected_wood_plank.start_recording()
             st.success(f"{sensor_id} connecté et initialisé ✅")
             return True, sensor_id
         except Exception as e:
@@ -122,9 +122,14 @@ class InstanceManager:
             return False
 
     def stop_bluetooth_sensor(self, sensor_id, sensor_instance):
-        sensor_instance.stop_flag = True
-        self.configClass.set_status(sensor_id, "false")
-        return True
+        try:
+            sensor_instance.stop_recording()
+            self.configClass.set_status(sensor_id, "false")
+            return True
+        except (Exception, cbd.ConnectedBluetoothDeviceError) as e:
+            st.error(f"Error while stopping {sensor_id}: {str(e)}")
+            logging.error(f"Error while stopping {sensor_id}: {str(e)}")
+            return False
 
     def stop_myo_sensor(self, sensor_id, sensor_instance):
         try:

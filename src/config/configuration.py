@@ -99,6 +99,13 @@ class Config:
             if device['device'].lower() == device_name.lower():
                 return device['port']
         return None
+    
+    def get_device_ports(self, device_name):
+        ports = []
+        for device in self.config['ports']:
+            if device['device'].lower().startswith(device_name.lower()):
+                ports.append(device['port'])
+                return ports
 
     def get_available_devices(self):
         """
@@ -226,6 +233,9 @@ class Config:
         except Exception as e:
             logging.error(f"Error while retrieving the wifi configuration: {e}")
             return None
+        
+    def get_service_uuid(self, device_name):
+        return self.config['uuid_services'][device_name] if device_name.lower() in self.config['uuid_services'].lower() else None
     
     def save_config(self):
         """

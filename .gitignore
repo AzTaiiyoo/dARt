@@ -4,3 +4,6 @@
 .vscode
 /dependencies
 src/csv_files_data/
+GrideyeBluetooth.py
+test.py
+importest.py

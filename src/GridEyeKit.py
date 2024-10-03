@@ -242,7 +242,7 @@ class GridEYEKit:
             else:
                 new_filename = self.csv_filename
                 
-            new_filepath = os.path.join(self.csv_directory, new_filename)
+            new_filepath = self.csv_directory / new_filename
             df.to_csv(new_filepath, index=False)
             print(f"Data saved to {new_filename}")
             self.data_records.clear()

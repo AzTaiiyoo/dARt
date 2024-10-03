@@ -1,169 +1,58 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 15 16:56:46 2015
+# Données de test ConnectedBluetoothDevice
 
-@author: Alexander Hoch
-"""
+ # Fonction utilitaire pour vérifier l'existence des fichiers
+    # def check_file_exists(directory, filename):
+    #     full_path = os.path.join(directory, filename)
+    #     exists = os.path.exists(full_path)
+    #     print(f"Fichier {filename}: {'Existe' if exists else 'N''existe pas'}")
+    #     return exists
 
-import tkinter as tk
-from tkinter import messagebox
-import colorsys
-import sys
-from pathlib import Path
-import pandas as pd
-import config.configuration as conf 
+    # Créer trois instances de ConnectedBluetoothDevice
+    # device1 = ConnectedBluetoothDevice()
+    # device2 = ConnectedBluetoothDevice()
+    # device3 = ConnectedBluetoothDevice()
 
-sys.path.append(str(Path(__file__).parent))
-from GridEyeKit import GridEYEKit
+    # # Simuler l'ajout de données pour chaque device
+    # test_data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
+    # # Device 1
+    # device1.CWP_data_to_array([*test_data, 55])  # Données de configuration
+    # device1.CWP_data_to_array([*test_data, 15])  # Données SG
+    # device1.CWP_data_to_array([*test_data, 25])  # Données Piezos
+    # device1.CWP_data_to_array([*test_data, 35])  # Données Capa
 
-# Grid Eye related numbers
+    # # Device 2
+    # device2.CWP_data_to_array([*test_data, 55])
+    # device2.CWP_data_to_array([*test_data, 15])
+    # device2.CWP_data_to_array([*test_data, 25])
+    # device2.CWP_data_to_array([*test_data, 35])
 
+    # # Device 3
+    # device3.CWP_data_to_array([*test_data, 55])
+    # device3.CWP_data_to_array([*test_data, 15])
+    # device3.CWP_data_to_array([*test_data, 25])
+    # device3.CWP_data_to_array([*test_data, 35])
 
+    # # Écrire les données dans les fichiers CSV
+    # device1.CWP_data_to_csv()
+    # device2.CWP_data_to_csv()
+    # device3.CWP_data_to_csv()
 
-class GridEYE_Viewer():
+    # # Vérifier l'existence des fichiers créés
+    # directory = device1.DIRECTORY  # Supposons que tous les devices utilisent le même répertoire
 
-    def __init__(self,root):
-        
-        self.ConfigClass = conf.Config()
-        self.config = self.ConfigClass.config
-        
-        """ Initialize Window """
-        self.tkroot = root
-        self.tkroot.protocol('WM_DELETE_WINDOW', self.exitwindow) # Close serial connection and close window
+    # expected_files = [
+    #     "CWP_Capa_data_0.csv", "CWP_Piezos_data_0.csv", "CWP_SG_data_0.csv",
+    #     "CWP_Capa_data_1.csv", "CWP_Piezos_data_1.csv", "CWP_SG_data_1.csv",
+    #     "CWP_Capa_data_2.csv", "CWP_Piezos_data_2.csv", "CWP_SG_data_2.csv"
+    # ]
 
-        """ Initialize variables for color interpolation """
-        self.HUEstart= 0.5 #initial color for min temp (0.5 = blue)
-        self.HUEend = 1 #initial color for max temp (1 = red)
-        self.HUEspan = self.HUEend - self.HUEstart
-        
-        """ Grid Eye related variables"""
-        self. MULTIPLIER = 0.25 # temp output multiplier
-        
-        """ Initialize Loop bool"""
-        self.START = False
-              
-        """Initialize frame tor temperature array (tarr)"""
-        self.frameTarr = tk.Frame(master=self.tkroot, bg='white')
-        self.frameTarr.place(x=5, y=5, width = 400, height = 400)
-        
-        """Initialize pixels tor temperature array (tarr)"""
-        self.tarrpixels = []
-        self.pixelTemps = []
-        for i in range(8):
-            #frameTarr.rowconfigure(i,weight=1) # self alignment
-            #frameTarr.columnconfigure(i,weight=1) # self alignment
-            for j in range(8):
-                pix = tk.Label(master=self.frameTarr, bg='gray', text='11')
-                spacerx = 1
-                spacery = 1
-                pixwidth = 40
-                pixheight = 40
-                pix.place(x=spacerx+j*(spacerx+pixwidth), y=spacery+i*(pixheight+spacery),  width = pixwidth, height = pixheight)
-                print 
-                self.tarrpixels.append(pix) # attache all pixels to tarrpixel list
-    
-        """Initialize frame tor Elements"""
-        self.frameElements = tk.Frame(master=self.tkroot, bg='white')
-        self.frameElements.place(x=410, y=5, width = 100, height = 400)
-        
+    # print("\nVérification des fichiers créés:")
+    # all_files_exist = all(check_file_exists(directory, filename) for filename in expected_files)
 
-        """Initialize controll buttons"""
-        self.buttonStart = tk.Button(master=self.frameElements, text='start', bg='white',
-                                 command=self.start_update)
-        self.buttonStart.pack()
-        self.buttonStop = tk.Button(master=self.frameElements, text='stop', bg='white',
-                                 command=self.stop_update)
-        self.buttonStop.pack()
-        
-        """Initialize temperature adjustment"""
-        self.lableTEMPMAX = tk.Label(master=self.frameElements, text='Max Temp (red)')
-        self.lableTEMPMAX.pack()
-        self.MAXTEMP = tk.Scale(self.frameElements, from_=-20, to=120, resolution =0.25)
-        self.MAXTEMP.set(31)
-        self.MAXTEMP.pack()
-        self.lableMINTEMP = tk.Label(master=self.frameElements, text='Min Temp (blue)')
-        self.lableMINTEMP.pack()
-        self.MINTEMP = tk.Scale(self.frameElements, from_=-20, to=120, resolution =0.25)
-        self.MINTEMP.set(27)
-        self.MINTEMP.pack()
-        
-        self.kit = GridEYEKit(self.ConfigClass.get_device_port('Grideye'))
-                 
-    def exitwindow(self):
-        """ if windwow is clsoed, serial connection has to be closed!"""
-        self.kit.close()
-        self.tkroot.destroy()
-        # if self.kit.recording_thread:
-        #     self.kit.stop_recording()
+    # if all_files_exist:
+    #     print("\nTous les fichiers attendus ont été créés avec succès!")
+    # else:
+    #     print("\nCertains fichiers attendus n'ont pas été créés.")
 
-        
-    def stop_update(self):
-        """ stop button action - stops infinite loop """
-        # self.START = False
-        # if self.kit.recording_thread:
-        #     self.kit.stop_recording()
-        self.update_tarrpixels()
-        
-
-
-    def start_update(self):
-        if self.kit.connect():
-            """ start button action -start serial connection and start pixel update loop"""
-            self.START = True
-            """ CAUTION: Wrong com port error is not handled"""
-            self.update_tarrpixels()  
-            # self.kit.start_recording(interval=1)
-        else:
-            messagebox.showerror("Not connected", "Could not find Grid-EYE Eval Kit - please install driver and connect")
-            
-        
-    def get_tarr(self):
-        """ unnecessary function - only converts numpy array to tuple object"""
-        tarr = []
-        for temp in self.kit.get_temperatures(): # only fue to use of old rutines
-            for temp2 in temp:
-                tarr.append(temp2)
-        return tarr
-        
-    def update_tarrpixels(self):
-        """ Loop for updating pixels with values from function "get_tarr" - recursive function with exit variable """
-        if self.START:
-            tarr = self.get_tarr()  # Get temperature array
-
-            i = 0  # counter for tarr
-            if len(tarr) == len(self.tarrpixels):  # check if problem with readout
-                for tarrpix in self.tarrpixels:
-                    tarrpix.config(text=tarr[i])  # Update Pixel text
-                    if tarr[i] < self.MINTEMP.get():  # For colors, set borders to min/max temp
-                        normtemp = 0
-                    elif tarr[i] > self.MAXTEMP.get():  # For colors, set borders to min/max temp
-                        normtemp = 1
-                    else:
-                        TempSpan = self.MAXTEMP.get() - self.MINTEMP.get()
-                        if TempSpan <= 0:  # avoid division by 0 and negative values
-                            TempSpan = 1
-                        normtemp = (float(tarr[i]) - self.MINTEMP.get()) / TempSpan  # Normalize temperature 0...1
-                    
-                    # Ensuring h is within [0, 1]
-                    h = max(0, min(1, normtemp * self.HUEspan + self.HUEstart))
-                    
-                    # Convert to RGB colors (returns values in the range 0.0 to 1.0)
-                    rgb = colorsys.hsv_to_rgb(h, 1, 1)
-                    
-                    # Convert RGB values to the range 0-255 and to integers
-                    bgrgb = tuple(int(255 * j) for j in rgb)
-                    
-                    # Convert to Hex String and set background color
-                    tarrpix.config(bg=('#%02x%02x%02x' % bgrgb))
-                    
-                    i += 1  # increment tarr counter
-            else:
-                print("Error - temperature array length wrong")
-            self.frameTarr.after(10, self.update_tarrpixels)      
-    
-root = tk.Tk()
-root.title('Grid-Eye Viewer')
-root.geometry('500x450')        
-Window = GridEYE_Viewer(root)
-root.mainloop()
+    # print("\nTest terminé.")

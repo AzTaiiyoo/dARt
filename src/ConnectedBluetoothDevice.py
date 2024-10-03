@@ -19,6 +19,7 @@ import config.configuration as Conf
 import os
 import logging
 from pathlib import Path
+import threading
 
 Main_path = Path(__file__).parents[0]
 # Logging configuration
@@ -46,16 +47,24 @@ class ConnectedBluetoothDevice:
             self.instance_id = 1
 
             self.stop_flag = False
+            
+            self.running = threading.Event()
+            self.thread = None 
+            
+            self.SEN55_ports = self.ConfigClass.get_device_ports("SEN55")
+            self.SEN55_mac_adress = None
+            
             self.current_time = time.strftime("%Y-%m-%d %H:%M:%S")
-
             self.DIRECTORY = self.config['directories']['csv']
-
             self.SEN55_filename = self.config['filenames']['SEN55']
-
-            self.SEN55_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['SEN55'])
-            self.CWP_SG_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_SG'])
-            self.CWP_Capa_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Capa'])
-            self.CWP_Piezos_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
+            # self.SEN55_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['SEN55'])
+            self.SEN55_path = Main_path / self.DIRECTORY / self.SEN55_filename
+            # self.CWP_SG_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_SG'])
+            self.CWP_SG_path = Main_path / self.DIRECTORY / self.config['filenames']['CWP_SG']
+            #self.CWP_Capa_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Capa'])
+            self.CWP_Capa_path = Main_path / self.DIRECTORY / self.config['filenames']['CWP_Capa']
+            self.CWP_Piezos_path = Main_path / self.DIRECTORY / self.config['filenames']['CWP_Piezos']
+            #self.CWP_Piezos_path = os.path.join(Main_path,self.DIRECTORY, self.config['filenames']['CWP_Piezos'])
 
             self.SEN55_data = []
             self.CWP_SG_data = []
@@ -80,46 +89,78 @@ class ConnectedBluetoothDevice:
             "CWP_Piezos": self.CWP_Piezos_data[-1] if self.CWP_Piezos_data else None
         }
         return latest_data
+    
+    def get_SEN55_mac_adresses(self):
+        try:
+            if self.instance_id == 0:
+                raise ConnectedBluetoothDeviceError("Instance Id = 0, trying to catch value from SEN55_mac_adress < 0 ")
+            self.SEN55_mac_adress = self.SEN55_ports[self.instance_id - 1]
+        except Exception as e:
+            logging.error(f"Error while getting MAC addresses: {str(e)}")
+            raise ConnectedBluetoothDeviceError("Error getting MAC addresses")
+        
+    def start_recording(self):
+        try:
+            if not self.running.is_set():
+                self.running.set()
+                self.thread = threading.Thread(target=self.run_listen_for_sen55)
+                self.thread.start()
+                logging.info("Started listening for devices.")
+        except Exception as e : 
+            logging.error(f"Error while starting to listen for devices: {str(e)}")
+            
+    def stop_recording(self):
+        try:
+            if self.running.is_set():
+                self.sen55_data_to_csv()
+                logging.info("Data saved to CSV.")
+                self.running.clear()
+                if self.thread:
+                    self.thread.join(timeout=5)
+                    logging.info("Stopped listening for devices.")
+        except Exception as e : 
+            logging.error(f"Error while stopping to listen for devices: {str(e)}")
         
     async def listen_for_sen55(self):
-        if self.stop_flag:
-            logging.info("Flag already set to true")
-            self.sen55_data_to_csv()
-            return
+        # if self.stop_flag:
+        #     logging.info("Flag already set to true")
+        #     self.sen55_data_to_csv()
+        #     return
+        while self.running.is_set():
 
-        try:
-            available_devices = {device['device']: device for device in self.config['devices']}
-            logging.info("Starting to listen...")
+            try:
+                available_devices = {device['device']: device for device in self.config['devices']}
+                logging.info("Starting to listen...")
 
-            async def detection_callback(device, advertising_data):
-                if device.name in available_devices:
-                    if self.ConfigClass.get_status(device.name):
-                        manufacturer_data = advertising_data.manufacturer_data
-                        if manufacturer_data:
-                            for _, data in manufacturer_data.items():
-                                logging.info(f"Data received from {device.name}")
-                                data_size = self.ConfigClass.get_values(device.name)
-                                if len(data) >= data_size:
-                                    values = struct.unpack(self.ConfigClass.get_values_string(device.name), data[:data_size])
-                                    logging.debug(', '.join(str(value) for value in values))
+                async def detection_callback(device, advertising_data):
+                    if device.name in available_devices:
+                        if self.ConfigClass.get_status(device.name):
+                            manufacturer_data = advertising_data.manufacturer_data
+                            if manufacturer_data:
+                                for _, data in manufacturer_data.items():
+                                    logging.info(f"Data received from {device.name},{data}")
+                                    data_size = self.ConfigClass.get_values(device.name)
+                                    if len(data) >= data_size:
+                                        values = struct.unpack(self.ConfigClass.get_values_string(device.name), data[:data_size])
+                                        logging.debug(', '.join(str(value) for value in values))
 
-                                    if device.name == "Connected_Wood_Plank":
-                                        self.CWP_data_to_array(values)
-                                    elif device.name == "SEN55":
-                                        self.SEN55_data_to_array(values)
-                                        
-                                    if self.wifi_transmitter:
-                                        latest_data = self.get_latest_data()
-                                        self.wifi_transmitter.update(latest_data)
+                                        if device.name == "Connected_Wood_Plank":
+                                            self.CWP_data_to_array(values)
+                                        elif device.name == "SEN55":
+                                            self.SEN55_data_to_array(values)
+                                            
+                                        if self.wifi_transmitter:
+                                            latest_data = self.get_latest_data()
+                                            self.wifi_transmitter.update(latest_data)
 
-            scanner = BleakScanner(detection_callback=detection_callback)
-            await scanner.start()
-            await asyncio.sleep(20)  # Run for 20 seconds
-            await scanner.stop()
+                scanner = BleakScanner(detection_callback=detection_callback)
+                await scanner.start()
+                await asyncio.sleep(20)  # Run for 20 seconds
+                await scanner.stop()
 
-        except Exception as e:
-            logging.error(f"Error while listening for devices: {str(e)}")
-            raise ConnectedBluetoothDeviceError("Error listening for devices")
+            except Exception as e:
+                logging.error(f"Error while listening for devices: {str(e)}")
+                raise ConnectedBluetoothDeviceError("Error listening for devices")
 
     # Méthode pour exécuter la fonction asynchrone
     def run_listen_for_sen55(self):
@@ -161,10 +202,11 @@ class ConnectedBluetoothDevice:
             else:
                 new_filename = self.SEN55_filename
 
-            new_filepath = os.path.join(self.DIRECTORY, new_filename)
+            new_filepath = Main_path / self.DIRECTORY / new_filename
 
             # Vérifier si le fichier existe déjà pour déterminer si nous devons inclure l'en-tête
             file_exists = os.path.isfile(new_filepath)
+            print(new_filepath)
 
             df.to_csv(new_filepath, mode="a", header=not file_exists, index=False)
             logging.info(f"Données SEN55 enregistrées dans {new_filename}")
@@ -269,7 +311,7 @@ class ConnectedBluetoothDevice:
                     else:
                         new_filename = f"{base_filename}.csv"
 
-                    new_path = os.path.join(self.DIRECTORY, new_filename)
+                    new_path = Main_path / self.DIRECTORY / new_filename
                     df.to_csv(new_path, mode="w", header=True, index=False)
                     logging.info(f"Données {base_filename} enregistrées dans {new_filename}")
                     data.clear()
@@ -279,61 +321,9 @@ class ConnectedBluetoothDevice:
         except Exception as e:
             logging.error(f"Erreur lors de l'écriture des données CWP dans le CSV: {str(e)}")
             raise ConnectedBluetoothDeviceError("Erreur d'écriture CSV CWP")
+        
+    def __del__(self):
+        self.stop_recording()
 
 if __name__ == "__main__":
-    # Fonction utilitaire pour vérifier l'existence des fichiers
-    # def check_file_exists(directory, filename):
-    #     full_path = os.path.join(directory, filename)
-    #     exists = os.path.exists(full_path)
-    #     print(f"Fichier {filename}: {'Existe' if exists else 'N''existe pas'}")
-    #     return exists
-
-    # Créer trois instances de ConnectedBluetoothDevice
-     device1 = ConnectedBluetoothDevice()
-     device2 = ConnectedBluetoothDevice()
-     device3 = ConnectedBluetoothDevice()
-
-    # # Simuler l'ajout de données pour chaque device
-    # test_data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-
-    # # Device 1
-    # device1.CWP_data_to_array([*test_data, 55])  # Données de configuration
-    # device1.CWP_data_to_array([*test_data, 15])  # Données SG
-    # device1.CWP_data_to_array([*test_data, 25])  # Données Piezos
-    # device1.CWP_data_to_array([*test_data, 35])  # Données Capa
-
-    # # Device 2
-    # device2.CWP_data_to_array([*test_data, 55])
-    # device2.CWP_data_to_array([*test_data, 15])
-    # device2.CWP_data_to_array([*test_data, 25])
-    # device2.CWP_data_to_array([*test_data, 35])
-
-    # # Device 3
-    # device3.CWP_data_to_array([*test_data, 55])
-    # device3.CWP_data_to_array([*test_data, 15])
-    # device3.CWP_data_to_array([*test_data, 25])
-    # device3.CWP_data_to_array([*test_data, 35])
-
-    # # Écrire les données dans les fichiers CSV
-    # device1.CWP_data_to_csv()
-    # device2.CWP_data_to_csv()
-    # device3.CWP_data_to_csv()
-
-    # # Vérifier l'existence des fichiers créés
-    # directory = device1.DIRECTORY  # Supposons que tous les devices utilisent le même répertoire
-
-    # expected_files = [
-    #     "CWP_Capa_data_0.csv", "CWP_Piezos_data_0.csv", "CWP_SG_data_0.csv",
-    #     "CWP_Capa_data_1.csv", "CWP_Piezos_data_1.csv", "CWP_SG_data_1.csv",
-    #     "CWP_Capa_data_2.csv", "CWP_Piezos_data_2.csv", "CWP_SG_data_2.csv"
-    # ]
-
-    # print("\nVérification des fichiers créés:")
-    # all_files_exist = all(check_file_exists(directory, filename) for filename in expected_files)
-
-    # if all_files_exist:
-    #     print("\nTous les fichiers attendus ont été créés avec succès!")
-    # else:
-    #     print("\nCertains fichiers attendus n'ont pas été créés.")
-
-    # print("\nTest terminé.")
+   device = ConnectedBluetoothDevice(None)
