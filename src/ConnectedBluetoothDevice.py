@@ -91,6 +91,20 @@ class ConnectedBluetoothDevice:
         return latest_data
     
     def get_SEN55_mac_adresses(self):
+        """
+        @brief Retrieves the MAC address for the SEN55 device based on the instance ID.
+
+        This method attempts to fetch the MAC address for the SEN55 device using the instance ID.
+        If the instance ID is 0, it raises a ConnectedBluetoothDeviceError indicating an invalid instance ID.
+        Otherwise, it assigns the corresponding MAC address from the SEN55_ports list to the SEN55_mac_adress attribute.
+
+        @exception ConnectedBluetoothDeviceError Raised when the instance ID is 0 or when there is an error fetching the MAC address.
+        @exception Exception Logs any other exceptions that occur during the process.
+
+        @note Ensure that the instance ID is set correctly before calling this method.
+
+        @return None
+        """
         try:
             if self.instance_id == 0:
                 raise ConnectedBluetoothDeviceError("Instance Id = 0, trying to catch value from SEN55_mac_adress < 0 ")
@@ -100,6 +114,16 @@ class ConnectedBluetoothDevice:
             raise ConnectedBluetoothDeviceError("Error getting MAC addresses")
         
     def start_recording(self):
+        """
+        @brief Starts the recording process by initiating a thread to listen for SEN55 devices.
+        
+        This method checks if the recording process is not already running. If it is not, it sets the running flag,
+        creates a new thread to run the `run_listen_for_sen55` method, and starts the thread. Logs an info message
+        indicating that the listening process has started. If an exception occurs, it logs an error message with the
+        exception details.
+        
+        @exception Logs an error message if an exception occurs while starting the listening process.
+        """
         try:
             if not self.running.is_set():
                 self.running.set()
@@ -110,6 +134,17 @@ class ConnectedBluetoothDevice:
             logging.error(f"Error while starting to listen for devices: {str(e)}")
             
     def stop_recording(self):
+        """
+        @brief Stops the recording process for the connected Bluetooth device.
+
+        This method attempts to stop the recording process by performing the following steps:
+        1. Checks if the recording is currently running.
+        2. Saves the sensor data to a CSV file.
+        3. Clears the running flag to indicate that recording has stopped.
+        4. Joins the recording thread with a timeout of 5 seconds to ensure it has stopped.
+
+        @exception Logs an error message if an exception occurs while stopping the recording process.
+        """
         try:
             if self.running.is_set():
                 self.sen55_data_to_csv()
@@ -164,6 +199,14 @@ class ConnectedBluetoothDevice:
 
     # Méthode pour exécuter la fonction asynchrone
     def run_listen_for_sen55(self):
+        """
+        @brief Runs the asynchronous method listen_for_sen55 using asyncio.run.
+        
+        This method is responsible for starting the listening process for the SEN55 sensor data.
+        It uses the asyncio.run function to execute the listen_for_sen55 coroutine.
+        
+        @note This method blocks until listen_for_sen55 completes.
+        """
         asyncio.run(self.listen_for_sen55())
     
     def SEN55_data_to_array(self, values):
@@ -323,6 +366,13 @@ class ConnectedBluetoothDevice:
             raise ConnectedBluetoothDeviceError("Erreur d'écriture CSV CWP")
         
     def __del__(self):
+        """
+        @brief Destructor method for the ConnectedBluetoothDevice class.
+        
+        This method is called when the instance is about to be destroyed. It ensures that the recording is stopped before the object is deleted.
+        
+        @note This method relies on the stop_recording method to properly release resources.
+        """
         self.stop_recording()
 
 if __name__ == "__main__":

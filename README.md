@@ -17,12 +17,59 @@ The **dARt application** is designed to interface with multiple types of sensors
 
 1. Clone the repository to your local machine:
    ```bash
-   git clone https://github.com/your-repo/dARt.git
+   git clone https://github.com/AzTaiiyoo/dARt.git
    ```
 
 ## Configuration
 
 Before running the application, you will need to modify the `config.json` file to set up the sensors you intend to use.
+
+### Convention rules
+
+The way of declaring sensors in the `config.json` file changes depending on if you wish to use one of the same type of sensors or several. You must respect this convention for the **dARt** to work as intended.
+
+Example 1: Amount set to 1 for a sensor
+
+```json
+"ports": [
+    {
+      "device": "Myo_Sensor",
+      "port": "53:89:D1:03:96:F7"
+    },
+    {
+      "device": "SEN55",
+      "port": "COM5"
+    },
+] ...
+```
+
+Example 2: Amount set to > 1 for a sensor
+
+```json
+"ports":[
+  {
+    "device": "Grideye_1",
+    "port": "COM1"
+  },
+  {
+    "device": "Grideye_2",
+    "port": "COM2"
+  },
+  {
+    "device": "Myo_Sensor",
+    "port": "53:89:D1:03:96:F7"
+  },
+  {
+    "device": "SEN55_1",
+    "port": "53:09:C1:F3:54:F2"
+  },
+  {
+    "device": "SEN55_2",
+    "port": "54:F2:11:43:54:F2"
+  },
+]...
+
+```
 
 ### Example 1: Grideye Only
 
@@ -32,6 +79,7 @@ To use only Grideye sensors:
 2. Locate the section labeled `device: "Grideye"`.
 3. Set the `amount` variable to the number of Grideye sensors you want to use (e.g., 4).
 4. Set the `live` variable to `true` if you want to enable real-time data transfer via Wi-Fi.
+5. Update ports section following the convention at the beginning of the config.json file or as shown below.
 
 Example:
 
@@ -42,9 +90,20 @@ Example:
   "active": true,
   "live": true
 }
+
+"ports":[
+  {
+    "device": "Grideye_1",
+    "port": "COM1"
+  },
+  {
+    "device": "Grideye_2",
+    "port": "COM2"
+  },
+] ...
 ```
 
-5. Save your changes and proceed to the application UI. Select the Grideye option, click start, and the system will initialize your Grideye sensors.
+6. Save your changes and proceed to the application UI. Select the Grideye option, click start, and the system will initialize your Grideye sensors.
 
 ### Example 2: Multiple Sensors
 
@@ -56,6 +115,7 @@ To use multiple sensors (e.g., 2 Grideye, 1 Myo, and 5 SEN55):
    - `amount: 1` for Myo,
    - `amount: 5` for SEN55.
 3. If real-time data transfer is required for any of the sensors, set the `live` variable to `true` for those sensors.
+4. Update ports section following the convention at the beginning of the config.json file or as shown below.
 
 Example:
 
@@ -78,9 +138,28 @@ Example:
   "active": true,
   "live": true
 }
+
+"ports":[
+  {
+    "device": "Grideye_1",
+    "port": "COM1"
+  },
+  {
+    "device": "Grideye_2",
+    "port": "COM2"
+  },
+   {
+    "device": "SEN55_1",
+    "port": "COM2"
+  },
+  {
+    "device": "SEN55_2",
+    "port": "COM2"
+  },
+] ...
 ```
 
-4. In the application's UI, select the desired sensors (e.g., Grideye, Myo, and SEN55) and click start. The system will initialize the selected sensors for use.
+5. In the application's UI, select the desired sensors (e.g., Grideye, Myo, and SEN55) and click start. The system will initialize the selected sensors for use.
 
 ## Usage
 
