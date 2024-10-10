@@ -25,12 +25,12 @@ class MyoSensor:
     def __init__(self, port):
         try:
             
-            self.ClassDeConfiguration = Conf.Config()
-            self.config = self.ClassDeConfiguration.config
+            self.ConfigClass = Conf.Config()
+            self.config = self.ConfigClass.config
             
             self.port = port
             
-            self.csv_dir = self.ClassDeConfiguration.config['directories']['csv']
+            self.csv_dir = self.ConfigClass.config['directories']['csv']
             self.csv_path = Parent_path / self.csv_dir
             
             self.myo_process = None

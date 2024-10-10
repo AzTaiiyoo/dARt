@@ -70,14 +70,14 @@ class MyoSensorDatabase:
         """
         try:
             df = pd.read_csv(csv_path)
-            if 'timestamp' not in df.columns:
-                st.warning(f"No 'timestamp' column found in {csv_path.name}. Using row numbers as index.")
-                df['timestamp'] = range(len(df))
+            if 'Timestamp' not in df.columns:
+                st.warning(f"No 'Timestamp' column found in {csv_path.name}. Using row numbers as index.")
+                df['Timestamp'] = range(len(df))
             else:
                 try:
-                    df['timestamp'] = pd.to_datetime(df['timestamp'])
+                    df['Timestamp'] = pd.to_datetime(df['Timestamp'])
                 except ValueError:
-                    st.warning(f"Unable to parse 'timestamp' column as datetime in {csv_path.name}. Using it as is.")
+                    st.warning(f"Unable to parse 'Timestamp' column as datetime in {csv_path.name}. Using it as is.")
         except Exception as e:
             logging.error(f"Error loading data from {csv_path}: {str(e)}")
             df = pd.DataFrame()
@@ -95,11 +95,11 @@ class MyoSensorDatabase:
 
         st.subheader(f"Data Visualization - {file_name}")
         columns_to_plot = st.multiselect(f"Select columns to plot for {file_name}",
-                                         [col for col in df.columns if col != 'timestamp'],
+                                         [col for col in df.columns if col != 'Timestamp'],
                                          key=f"multiselect_{file_name}")
 
         if columns_to_plot:
-            fig = px.line(df, x='timestamp', y=columns_to_plot, title=f'Myo Data Over Time - {file_name}')
+            fig = px.line(df, x='Timestamp', y=columns_to_plot, title=f'Myo Data Over Time - {file_name}')
             st.plotly_chart(fig)
 
         st.subheader(f"Statistics - {file_name}")

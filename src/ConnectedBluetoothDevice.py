@@ -50,6 +50,7 @@ class ConnectedBluetoothDevice:
             
             self.running = threading.Event()
             self.thread = None 
+            self.latest_successful_read = time.time()
             
             self.SEN55_ports = self.ConfigClass.get_device_ports("SEN55")
             self.SEN55_mac_adress = None
@@ -157,10 +158,10 @@ class ConnectedBluetoothDevice:
             logging.error(f"Error while stopping to listen for devices: {str(e)}")
         
     async def listen_for_sen55(self):
-        # if self.stop_flag:
-        #     logging.info("Flag already set to true")
-        #     self.sen55_data_to_csv()
-        #     return
+        if time.time() - self.latest_successful_read > 7:
+            logging.info("No data received for 7 seconds. Stopping...")
+            self.stop_recording()
+            
         while self.running.is_set():
 
             try:
@@ -180,8 +181,10 @@ class ConnectedBluetoothDevice:
                                         logging.debug(', '.join(str(value) for value in values))
 
                                         if device.name == "Connected_Wood_Plank":
+                                            self.latest_successful_read = time.time()
                                             self.CWP_data_to_array(values)
                                         elif device.name == "SEN55":
+                                            self.latest_successful_read = time.time()
                                             self.SEN55_data_to_array(values)
                                             
                                         if self.wifi_transmitter:
