@@ -114,7 +114,12 @@
         "Min_interval": 0.1,
         "Max_interval": 5
     },
-    "uuid_services": {
-        "Grideye": "0783B03E-8535-B5A0-7140-A304D2495CB7"
-    }
+    "uuid_services": [
+        {
+            "device": "Grideye",
+            "DEVICE_ADDRESS": "00:13:43:25:04:0D",
+            "SERVICE_UUID": "0783b03e-8535-b5a0-7140-a304d2495cb7",
+            "CHARACTERISTIC_UUID": "0783b03e-8535-b5a0-7140-a304d2495cb8"
+        }
+    ]
 }

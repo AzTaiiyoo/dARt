@@ -8,6 +8,7 @@ import config.configuration as Conf
 import GridEyeKit as gek
 import MyoSensor.Myo as Myo
 import ConnectedBluetoothDevice as cbd
+import GrideyeBluetooth as geb
 import streamlit as st
 
 class InstanceManager:
@@ -45,7 +46,7 @@ class InstanceManager:
         port = self.configClass.get_device_port(sensor_id)
 
         if sensor == "Grideye":
-            return self.initialize_grideye(sensor_id, port, i)
+            return self.initialize_bluetooth_grideye(sensor_id, i)
         elif sensor == "SEN55":
             return self.initialize_sen55(sensor_id, i)
         elif sensor == "Myo_Sensor":
@@ -77,6 +78,26 @@ class InstanceManager:
                 raise Exception(f"Error while initializing {sensor_id}. Please verify the connection.")
         except (gek.GridEYEError, Exception) as e:
             st.error(f"Error while initializing {sensor_id}: {str(e)}")
+            return False, None
+
+    def initialize_bluetooth_grideye(self, sensor_id, i):
+        """
+        @brief Initializes a Bluetooth GridEye sensor.
+        @param sensor_id The unique identifier for the sensor.
+        @param i The instance number of the sensor.
+        @return tuple A boolean indicating success and the sensor_id if successful, or False and None if failed.
+        """
+        try:
+            grideye = geb.GridEYEReader()
+            self.sensor_instances[sensor_id] = grideye
+            grideye.instance_id = i
+            grideye.start_recording()
+            self.configClass.set_status("Grideye", "true")
+            st.success(f"{sensor_id} connecté et initialisé ✅")
+            return True, sensor_id
+        except Exception as e:
+            st.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
+            logging.error(f"Erreur lors de l'initialisation de {sensor_id}: {str(e)}")
             return False, None
 
     def initialize_sen55(self, sensor_id, i):
@@ -161,6 +182,22 @@ class InstanceManager:
                 logging.error(f"Error deactivating {sensor_id}: {str(deactivation_error)}")
 
     def stop_grideye_sensor(self, sensor_id, sensor_instance):
+        """
+        @brief Stops a GridEye sensor.
+        @param sensor_id The unique identifier for the sensor.
+        @param sensor_instance The instance of the GridEye sensor to stop.
+        @return bool True if the sensor was successfully stopped, False otherwise.
+        """
+        try:
+            sensor_instance.stop_recording()
+            self.configClass.set_status(sensor_id, "false")
+            return True
+        except (Exception, gek.GridEYEError) as e:
+            st.error(f"Error while stopping {sensor_id}: {str(e)}")
+            logging.error(f"Error while stopping {sensor_id}: {str(e)}")
+            return False
+        
+    def stop_grideye_bluetooth_sensor(self, sensor_id, sensor_instance):
         """
         @brief Stops a GridEye sensor.
         @param sensor_id The unique identifier for the sensor.

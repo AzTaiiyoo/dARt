@@ -263,8 +263,13 @@ class Config:
         @param device_name str Le nom de l'appareil.
         @return str|None L'UUID du service ou None si l'appareil n'est pas trouvé.
         """
-        return self.config['uuid_services'][device_name] if device_name.lower() in self.config['uuid_services'].lower() else None
-    
+        for device in self.config['uuid_services']:
+            if device['device'].lower() == device_name.lower():
+                uuid_config = {"DEVICE_ADDRESS": device['DEVICE_ADDRESS'],
+                               "SERVICE_UUID": device['SERVICE_UUID'],
+                               "CHARACTERISTIC_UUID": device['CHARACTERISTIC_UUID']}
+                return uuid_config
+            
     def save_config(self):
         """
         @brief Saves the configuration to the JSON file.

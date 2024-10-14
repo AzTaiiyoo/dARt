@@ -23,6 +23,8 @@ Main_path = Path(__file__).parents[0]
 
 import MyoSensor.Myo as Myo
 import ConnectedBluetoothDevice as cbd
+import GridEyeKit as gek
+import GrideyeBluetooth as geb
 from Instance_manager import InstanceManager
 from config.Wifi_transmitter import Wifi_transmitter
 
@@ -175,6 +177,8 @@ class dARtToolkit:
                     self.device_manager.stop_bluetooth_sensor(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, Myo.MyoSensor):
                     self.device_manager.stop_myo_sensor(sensor_id, sensor_instance)
+                elif isinstance(sensor_instance, geb.GridEYEReader):
+                    self.device_manager.stop_grideye_bluetooth_sensor(sensor_id, sensor_instance)
                 else:
                     logging.warning(f"Unknown sensor type for {sensor_id}")
 
