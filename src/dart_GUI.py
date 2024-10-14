@@ -151,13 +151,12 @@ class dARtToolkit:
             st.session_state.session_active = True
             logging.info("Session is active")
             session_holder.empty()
-        except Exception as e:
-            st.error(f"An unexpected error occurred: {str(e)}")
-            logging.error(f"An unexpected error occurred while initializing sensors: {str(e)}")
+        except (Exception, Myo.MyoSensorException, gek.GridEYEError, geb.GridEYEConnectionError, geb.GridEYEConfigError, cbd.ConnectedBluetoothDeviceError) as e:
+            st.error(f"An error occurred: {str(e)}")
+            logging.error(f"An error occurred while initializing sensors: {str(e)}")
             self.device_manager.cleanup_on_error(activated_sensors)
             st.session_state.session_active = False
             session_holder.error("Sensor activation cancelled due to errors.")
-
     def stop_session(self):
         session_holder = st.empty()
 

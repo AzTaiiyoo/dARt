@@ -55,8 +55,8 @@ class MyoSensor:
             # Chemin vers l'exécutable Myo (chemin relatif par rapport au script)
             executable_path = os.path.join(Main_path, "MyoLinux/src/MyoApp")
             print(f"executable_path: {executable_path}")
-            print(f"Permissions executables : {os.access(executable_path, os.X_OK)}")
-            print(f"Permissions ecriture repertoire : {os.access(os.path.dirname(self.csv_path),os.W_OK)}")
+            print(f"Executable rights: {os.access(executable_path, os.X_OK)}")
+            print(f"Writing rights: {os.access(os.path.dirname(self.csv_path),os.W_OK)}")
             
             logging.info(f"Mac address : {self.port}")
             
@@ -68,8 +68,9 @@ class MyoSensor:
             self.configClass.set_status('MYO_Sensor', True)
             
         except Exception as e:
-            st.error(f"Erreur lors du lancement de l'exécutable Myo : {str(e)}")
-            logging.error(f"Erreur lors du lancement de l'exécutable Myo : {str(e)}")
+            st.error(f"Error while launching Myo executable file: {str(e)}")
+            logging.error(f"Error while launching Myo executable file: {str(e)}")
+            raise MyoSensorException(f"Error while launching Myo executable file: {str(e)}")
             
     def stop_myo_executable(self):
         myo_process_exists = False
@@ -81,9 +82,9 @@ class MyoSensor:
 
         if myo_process_exists:
             # Arrêter le processus Myo
-            print(f"DEUS VULTTTTTTT")
+            print(f"Stopping process")
             os.kill(pid, signal.SIGINT)
-            print(f"LA de;ocratie a ete repamdue ")
+            print(f"Process stopped")
             
             # Attendre que le processus se termine
             for _ in range(5):  # Attendre jusqu'à 5 secondes
