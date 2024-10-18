@@ -88,9 +88,8 @@ class InstanceManager:
         @return tuple A boolean indicating success and the sensor_id if successful, or False and None if failed.
         """
         try:
-            grideye = geb.GridEYEReader()
+            grideye = geb.GridEYEReader(i)
             self.sensor_instances[sensor_id] = grideye
-            grideye.instance_id = i
             grideye.start_recording()
             self.configClass.set_status("Grideye", "true")
             st.success(f"{sensor_id} connecté et initialisé ✅")

@@ -39,7 +39,7 @@ class GridEYEReader:
     processes it, and saves it to a CSV file.
     """
 
-    def __init__(self):
+    def __init__(self, instance_id):
         """
         @brief Initialize the GridEYEReader object.
         
@@ -48,6 +48,7 @@ class GridEYEReader:
         self.ConfigClass = Conf.Config()
         self.config = self.ConfigClass.config
         
+        self.instance_id = instance_id 
         self.init_bluetooth_config()
         
         self.csv_directory = Main_Path / self.config["directories"]["csv"]
@@ -62,7 +63,7 @@ class GridEYEReader:
         self.temperatures = np.zeros((8, 8), dtype=np.float32)
         self.latest_successful_read = time.time()
         self.data_records = []
-        self.instance_id = 1
+       
         self.client = None
 
     def init_bluetooth_config(self):
@@ -72,7 +73,8 @@ class GridEYEReader:
         @throws GridEYEConfigError If there's an error in retrieving or setting up the Bluetooth configuration.
         """
         try:
-            bluetooth_config = self.ConfigClass.get_service_uuid("Grideye")
+            device = self.grideye_uuid_name()
+            bluetooth_config = self.ConfigClass.get_service_uuid(device)
             if bluetooth_config:
                 self.DEVICE_ADDRESS = bluetooth_config['DEVICE_ADDRESS']
                 self.SERVICE_UUID = bluetooth_config['SERVICE_UUID']
@@ -82,6 +84,9 @@ class GridEYEReader:
         except Exception as e:
             raise GridEYEConfigError(f"Error in Bluetooth configuration: {str(e)}")
             
+    def grideye_uuid_name(self):
+        return "Grideye_{self.instance_id}" if self.ConfigClass.get_sensor_amount("Grideye") > 1 else "Grideye"
+    
     def start_recording(self):
         """
         @brief Start recording data from the GridEYE sensor.
