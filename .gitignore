@@ -1,6 +1,7 @@
 .idea
 **.DS_Store
 **__pychache__
+**/*cpython-312.pycx
 .vscode
 /dependencies
 src/csv_files_data/
