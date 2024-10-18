@@ -176,7 +176,7 @@ class dARtToolkit:
                     self.device_manager.stop_grideye_sensor(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
                     self.device_manager.stop_bluetooth_sensor(sensor_id, sensor_instance)
-                elif isinstance(sensor_instance, cbd.ConnectedWoodPlank):
+                elif isinstance(sensor_instance, cwp.ConnectedWoodPlank):
                     self.device_manager.stop_connected_wood_plank(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, Myo.MyoSensor):
                     self.device_manager.stop_myo_sensor(sensor_id, sensor_instance)
