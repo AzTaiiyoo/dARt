@@ -25,6 +25,7 @@ import MyoSensor.Myo as Myo
 import ConnectedBluetoothDevice as cbd
 import GridEyeKit as gek
 import GrideyeBluetooth as geb
+import ConnectedWoodPlank as cwp
 from Instance_manager import InstanceManager
 from config.Wifi_transmitter import Wifi_transmitter
 
@@ -151,12 +152,13 @@ class dARtToolkit:
             st.session_state.session_active = True
             logging.info("Session is active")
             session_holder.empty()
-        except (Exception, Myo.MyoSensorException, gek.GridEYEError, geb.GridEYEConnectionError, geb.GridEYEConfigError, cbd.ConnectedBluetoothDeviceError) as e:
+        except (Exception, Myo.MyoSensorException, gek.GridEYEError, geb.GridEYEConnectionError, geb.GridEYEConfigError, cbd.ConnectedBluetoothDeviceError, cwp.ConnectedWoodPlankError) as e:
             st.error(f"An error occurred: {str(e)}")
             logging.error(f"An error occurred while initializing sensors: {str(e)}")
             self.device_manager.cleanup_on_error(activated_sensors)
             st.session_state.session_active = False
             session_holder.error("Sensor activation cancelled due to errors.")
+            
     def stop_session(self):
         session_holder = st.empty()
 
@@ -174,6 +176,8 @@ class dARtToolkit:
                     self.device_manager.stop_grideye_sensor(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
                     self.device_manager.stop_bluetooth_sensor(sensor_id, sensor_instance)
+                elif isinstance(sensor_instance, cbd.ConnectedWoodPlank):
+                    self.device_manager.stop_connected_wood_plank(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, Myo.MyoSensor):
                     self.device_manager.stop_myo_sensor(sensor_id, sensor_instance)
                 elif isinstance(sensor_instance, geb.GridEYEReader):

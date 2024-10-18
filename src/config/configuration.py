@@ -257,7 +257,7 @@ class Config:
             logging.error(f"Error while retrieving the wifi configuration: {e}")
             return None
         
-    def get_service_uuid(self, device_name):
+    def get_grideye_uuid(self, device_name):
         """
         @brief Récupère l'UUID du service pour un appareil donné.
         @param device_name str Le nom de l'appareil.

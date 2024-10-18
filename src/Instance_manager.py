@@ -10,6 +10,7 @@ import MyoSensor.Myo as Myo
 import ConnectedBluetoothDevice as cbd
 import GrideyeBluetooth as geb
 import streamlit as st
+import ConnectedWoodPlank as cwp
 
 class InstanceManager:
     """
@@ -148,9 +149,9 @@ class InstanceManager:
         @return tuple A boolean indicating success and the sensor_id if successful, or False and None if failed.
         """
         try:
-            connected_wood_plank = cbd.ConnectedBluetoothDevice(self.wifi_transmitter)
+            connected_wood_plank = cwp.ConnectedWoodPlank(i,self.wifi_transmitter)
             self.sensor_instances[sensor_id] = connected_wood_plank
-            connected_wood_plank.instance_id = i
+            # connected_wood_plank.instance_id = i
             self.configClass.set_status("Connected_Wood_Plank", "true")
             connected_wood_plank.start_recording()
             st.success(f"{sensor_id} connecté et initialisé ✅")
@@ -172,7 +173,11 @@ class InstanceManager:
                     sensor_instance.stop_recording()
                     self.configClass.set_status(sensor_id, "false")
                 if isinstance(sensor_instance, cbd.ConnectedBluetoothDevice):
-                    sensor_instance.stop_flag = True
+                    # sensor_instance.stop_flag = True
+                    sensor_instance.stop_recording()
+                    self.configClass.set_status(sensor_id, "false")
+                if isinstance(sensor_instance, cwp.ConnectedWoodPlank):
+                    sensor_instance.stop_recording()
                     self.configClass.set_status(sensor_id, "false")
                 elif isinstance(sensor_instance, Myo.MyoSensor):
                     sensor_instance.stop_myo_executable()
@@ -227,7 +232,23 @@ class InstanceManager:
             st.error(f"Error while stopping {sensor_id}: {str(e)}")
             logging.error(f"Error while stopping {sensor_id}: {str(e)}")
             return False
-
+        
+    def stop_connected_wood_plank_sensor(self, sensor_id, sensor_instance):
+        """
+        @brief Stops a Bluetooth sensor.
+        @param sensor_id The unique identifier for the sensor.
+        @param sensor_instance The instance of the Bluetooth sensor to stop.
+        @return bool True if the sensor was successfully stopped, False otherwise.
+        """
+        try:
+            sensor_instance.stop_recording()
+            self.configClass.set_status(sensor_id, "false")
+            return True
+        except (Exception, cwp.ConnectedWoodPlankError) as e:
+            st.error(f"Error while stopping {sensor_id}: {str(e)}")
+            logging.error(f"Error while stopping {sensor_id}: {str(e)}")
+            return False
+        
     def stop_myo_sensor(self, sensor_id, sensor_instance):
         """
         @brief Stops a Myo sensor.

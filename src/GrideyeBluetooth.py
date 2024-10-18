@@ -74,7 +74,7 @@ class GridEYEReader:
         """
         try:
             device = self.grideye_uuid_name()
-            bluetooth_config = self.ConfigClass.get_service_uuid(device)
+            bluetooth_config = self.ConfigClass.get_grideye_uuid(device)
             if bluetooth_config:
                 self.DEVICE_ADDRESS = bluetooth_config['DEVICE_ADDRESS']
                 self.SERVICE_UUID = bluetooth_config['SERVICE_UUID']
