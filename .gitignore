@@ -2,6 +2,7 @@
 **.DS_Store
 **__pychache__
 **/*cpython-312.pycx
+**/*cpython-312.pyc
 .vscode
 /dependencies
 src/csv_files_data/
@@ -9,6 +10,7 @@ test.py
 importest.py
 src/MyoSensor/MyoLinux
 src/dart_executable.py
+src/config/config.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

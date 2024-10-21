@@ -118,13 +118,24 @@ class GridEYEReader:
                 self.running.clear()
                 self.stop_event.set()
                 if self.client:
-                    asyncio.run_coroutine_threadsafe(self.client.disconnect(), asyncio.get_event_loop())
+                    # asyncio.run_coroutine_threadsafe(self.client.disconnect(), asyncio.get_event_loop()) // Previous implementation 
+                    asyncio.run(self.disconnect_client())
                 if self.thread:
                     self.thread.join(timeout=10)
                 self.send_data_to_csv()
                 logging.info("Stopped GridEYE recording.")
         except Exception as e:
             raise GridEYEConnectionError(f"Error in stopping GridEYE recording: {str(e)}")
+        
+    async def disconnect_client(self):
+        """
+        @brief  Asynchronously disconnect the BLE client.
+        
+        Disconnects the BLE client and clears the client object.
+        """
+        if self.client and self.client.is_connected:
+            await self.client.disconnect()
+            logging.info("Disconnected from Grideye{self.instance_id}")
 
     async def run_ble_client(self):
         """
@@ -138,7 +149,7 @@ class GridEYEReader:
 
         while self.running.is_set() and not self.stop_event.is_set():
             try:
-                async with BleakClient(self.DEVICE_ADDRESS, timeout=10) as client:
+                async with BleakClient(self.DEVICE_ADDRESS, timeout=4) as client:
                     self.client = client
                     logging.info(f"Connected to {self.DEVICE_ADDRESS}")
                     await client.start_notify(self.CHARACTERISTIC_UUID, notification_handler)
@@ -218,7 +229,7 @@ class GridEYEReader:
                 index = (i * 8 + j) * 2
                 raw_temp = frame_data[index:index + 2]
                 temp = struct.unpack('<h', raw_temp)[0]
-                celsius_temp = temp * 0.25
+                celsius_temp = round(temp * 0.25,3)
                 self.temperatures[i][j] = celsius_temp
         self.display_temperatures()
 
