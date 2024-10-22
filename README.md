@@ -40,12 +40,16 @@ The **dARt application** is designed to interface with multiple types of sensors
 
 3. Install dependencies:
    To install the dependencies, you can either install them all at once using the requirement file such as:
+
    ```bash
    pip install --no-cache-dir -r requirements.txt
    ```
+
    Or do it manually using the _pip install_ command for each package in the requirements.txt file.
-   **Warning**
+
+   **Warning**:
    Due to some compatibility issues from the factory Grid-EYE code, you might encounter an error a `serial`error when running the app. If that happens, you have to run the following commands:
+
    ```bash
    pip install serial // install serial library
    pip install pyserial // install pyserial library
@@ -53,6 +57,7 @@ The **dARt application** is designed to interface with multiple types of sensors
    pip uninstall pyserial // uninstall pyserial
    pip install pyserial // install pyserial library again
    ```
+
    This should solve the problem.
 
 ## Configuration
@@ -217,4 +222,55 @@ Currently, the dARt application is designed to support a maximum of 1 Grideye an
 - `Configuration.py`
 - `dart_GUI`
 
-By adjusting these files, you can increase the number of supported Grideye and Myo sensors.
+By adjusting these files, you can increase the number of supported **Grideye** and **Myo sensors**.
+
+In addition, the **Myo sensor** library was built to work on Linux and MacOS. This means on Windows, the application will work for every other sensors except for the Myo. Further development using **Docker** might solve that issue.
+
+### Rebuild MyoLinux Library
+
+While this toolkit comes with a functional image for Raspberry Pi 3, you might encounter an "exec format error" when trying to use the Myo Armband on Linux or Mac. In such cases, rebuilding the library might resolve the issue.
+Rebuilding Steps
+
+1. Navigate to the MyoLinux source directory:
+
+```bash
+src/MyoSensor/MyoLinux/src
+```
+
+2. Remove existing CMake cache:
+
+```bash
+rm CMakeCache.txt
+```
+
+3. Rebuild the library:
+
+```bash
+cmake ..
+make
+make install
+```
+
+Compile with C++11 support:
+
+```bash
+g++ -std=c++11 main.cpp -o MyoApp -lmyolinux
+```
+
+### Setting Library Path
+
+After rebuilding, you need to add the library path to your system. Open a terminal and use the appropriate command for your operating system:
+
+Linux:
+
+```bash
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:path_to_src_of_MyoLinux/libmyolinux.so
+```
+
+macOS:
+
+```bash
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:path_to_src_of_MyoLinux/libmyolinux.dylib
+```
+
+**Note**: Replace path_to_src_of_MyoLinux with the actual path to your MyoLinux src directory.
