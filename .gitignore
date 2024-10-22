@@ -8,7 +8,7 @@
 src/csv_files_data/** 
 test.py
 importest.py
-# src/MyoSensor/MyoLinux/**
+src/MyoSensor/MyoLinux/**
 src/dart_executable.py
 src/config/config.json
 
