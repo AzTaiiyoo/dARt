@@ -16,9 +16,44 @@ The **dARt application** is designed to interface with multiple types of sensors
 ## Installation
 
 1. Clone the repository to your local machine:
+
    ```bash
    git clone https://github.com/AzTaiiyoo/dARt.git
    ```
+
+2. Create a python environment:
+
+   A python environment containing all dependencies is already provided with the repository. However, it
+   might happen depending on your OS that the environment will not be working properly. If that happens,
+   follow these instruction to create a custom python environment:
+
+   ```bash
+   python -m venv dependencies/name_of_your_environment
+   ```
+
+   Then activate it:
+
+   ```bash
+   source dependencies/name_of_your_environment/bin/activate // On linux/MacOS
+   source dependencies/name_of_your_environment/Scripts/activate // On Windows
+   ```
+
+3. Install dependencies:
+   To install the dependencies, you can either install them all at once using the requirement file such as:
+   ```bash
+   pip install --no-cache-dir -r requirements.txt
+   ```
+   Or do it manually using the _pip install_ command for each package in the requirements.txt file.
+   **Warning**
+   Due to some compatibility issues from the factory Grid-EYE code, you might encounter an error a `serial`error when running the app. If that happens, you have to run the following commands:
+   ```bash
+   pip install serial // install serial library
+   pip install pyserial // install pyserial library
+   pip uninstall serial // uninstall serial library
+   pip uninstall pyserial // uninstall pyserial
+   pip install pyserial // install pyserial library again
+   ```
+   This should solve the problem.
 
 ## Configuration
 
@@ -163,7 +198,12 @@ Example:
 
 ## Usage
 
-1. After configuring the `config.json` file, launch the application through the command line or executable.
+1. After configuring the `config.json` file, launch the application through the command using:
+
+```bash
+streamlit run src/main.py
+```
+
 2. In the UI:
    - Select the sensors you want to activate.
    - Click Start to initialize the sensors and begin data collection.

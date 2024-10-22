@@ -1,5 +1,6 @@
 streamlit==1.38.0
 serial==0.0.97
+pyserial==3.5
 psutil==5.9.0
 watchdog==4.0.2
 plotly==5.23.0

@@ -1,15 +1,3 @@
-"""
-@file SEN55_database.py
-@brief A Streamlit application for visualizing SEN55 sensor data.
-
-This module provides a user interface for loading, visualizing, and analyzing
-SEN55 sensor data using Streamlit and Plotly.
-
-@author [Your Name]
-@date [Current Date]
-@version 1.1
-"""
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -44,7 +32,6 @@ class SEN55Database:
             self.config = conf.Config().config
             self.csv_directory = Main_path / self.config['directories']['csv']
             self.csv_pattern = f"{self.config['filenames']['SEN55'].split('.')[0]}*.csv"
-            self.csv_path = self.csv_directory / self.config['filenames']['SEN55']
             self.csv_files = self.get_csv_files()
         except Exception as e:
             logging.error(f"Error initializing SEN55Database: {str(e)}")
@@ -70,21 +57,16 @@ class SEN55Database:
         @return A pandas DataFrame containing the processed SEN55 data.
         """
         try:
-            df = pd.read_csv(csv_path)
-
-            if 'time' not in df.columns:
-                st.warning("No 'time' column found in the CSV. Using row numbers as index.")
-                df['time'] = range(len(df))
-            else:
-                try:
-                    df['time'] = pd.to_datetime(df['time'])
-                except ValueError:
-                    st.warning("Unable to parse 'time' column as datetime. Using it as is.")
+            # Définir les noms de colonnes
+            column_names = ['time', 'Pm1p0', 'Pm2p5', 'Pm10', 'Temperature', 'Humidity', 'Temp', 'VOC']
+            
+            # Lire le CSV avec les noms de colonnes spécifiés
+            df = pd.read_csv(csv_path, names=column_names, parse_dates=['time'])
+            
+            return df
         except Exception as e:
             logging.error(f"Error loading data: {str(e)}")
-            df = pd.DataFrame()
-
-        return df
+            return pd.DataFrame()
 
     def run(self):
         """
