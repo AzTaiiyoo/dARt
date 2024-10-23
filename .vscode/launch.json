@@ -16,6 +16,18 @@
             },
             "python": "${workspaceFolder}/dependencies/env_dARt/bin/python",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: Exe Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "python": "${workspaceFolder}/dependencies/env_dARt/bin/python",
+            "console": "integratedTerminal"
         }
     ]
 }
